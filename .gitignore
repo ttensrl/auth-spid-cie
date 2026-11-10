@@ -1,0 +1,5 @@
+inspirations/
+.scratch/
+docker/.work/
+*.zip
+.DS_Store

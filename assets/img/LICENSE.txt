@@ -1,0 +1,7 @@
+spid-logo-bianco.svg, spid-logo-blu.svg
+  Logo SPID, da https://github.com/italia/spid-graphics (Agenzia per l'Italia Digitale).
+  Licenza: CC0 1.0 Universal (dedica al pubblico dominio).
+  Il logo SPID va usato secondo le linee guida AgID.
+
+Logo CIE: NON incluso. Il repository italia/cie-graphics non dichiara una licenza.
+  Il tema puo' fornirlo con il filtro `wpspid_logo_url` (vedi README).
