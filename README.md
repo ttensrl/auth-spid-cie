@@ -11,7 +11,7 @@
 ## Cosa fa
 
 - **SPID e CIE** (SAML 2.0): AuthnRequest firmate (Redirect e POST), validazione rigorosa delle Response, metadata firmato per l'ente **pubblico o privato** (ContactPerson ed estensioni `spid:`, `fpa:`, `cie:`).
-- **Sessione "gate"** per cittadini senza account WordPress: gli attributi SAML sono disponibili al tema e ad altri plugin, con sessione PHP protetta (id rigenerato al login, cookie `HttpOnly`/`SameSite`, durata assoluta).
+- **Sessione "gate"** per cittadini senza account WordPress: gli attributi SAML sono disponibili al tema e ad altri plugin. **Niente sessioni PHP**: un cookie casuale a 256 bit (`HttpOnly`, `SameSite=Lax`, `Secure` in HTTPS) punta a dati conservati sul server in un transient sotto il suo hash; nuovo identificativo a ogni login, scadenza e logout applicati lato server, nessun cookie ai visitatori anonimi (le pagine restano cacheabili).
 - **Pulsanti pronti**: `[spid_button]`, `[cie_button]`, `[wpspid_login]` e una pagina di accesso dedicata (`/?wpspid=choose`). Elenco dei gestori in **ordine casuale** e link *Maggiori informazioni / Non hai SPID? / Serve aiuto?* come da linee guida; markup accessibile, senza JavaScript.
 - **Integrazione con il tema WP Digital Italia** (e child ASL, Comuni, Scuole): il pulsante *Area personale* dell'header porta al login e, da collegato, mostra il nome del cittadino. Colori ereditati dal tema.
 - **Certificati**: generazione dal pannello (soggetto conforme all'Avviso SPID n.29 v.3) o import di chiave e certificato già registrati. Verifica pratica di OpenSSL all'attivazione, con blocco e avviso se il server non è idoneo.
@@ -84,7 +84,7 @@ if ( ! wpspid_is_authenticated() ) {
 | | |
 |---|---|
 | `do_action( 'wpspid_authenticated', $attributes, null, $idp_entity_id )` | dopo un login valido (es. per registrare l'accesso o creare un utente) |
-| `apply_filters( 'wpspid_session_lifetime', 2 * HOUR_IN_SECONDS )` | durata massima della sessione |
+| `apply_filters( 'wpspid_session_lifetime', 2 * HOUR_IN_SECONDS )` | durata massima della sessione (default 2 ore) |
 | `apply_filters( 'wpspid_logo_url', $url, $service )` | logo dei pulsanti (`'spid'` incluso, `'cie'` fornito dal tema) |
 
 ### Integrazione con il tema ASL / WP Digital Italia

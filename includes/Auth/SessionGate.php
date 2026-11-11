@@ -8,77 +8,122 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * "Gate" mode: SPID/CIE session for citizens without a WordPress account.
  *
- * Uses the PHP session (so that the legacy theme code reading
- * $_SESSION['govauth_user_data'] keeps working) with hardened handling:
- * session id regenerated on login, cookie flags, absolute lifetime, and no
- * session started for anonymous visitors on read.
+ * It does NOT use PHP sessions. At login a random 256-bit identifier is put in an
+ * HttpOnly cookie; the SAML attributes stay on the server (transient, so they follow the
+ * site's object cache) under the SHA-256 of that identifier. Consequences:
+ * - no session_start(): no lock between parallel requests, no Site Health warning;
+ * - works with several web servers as long as WordPress storage is shared;
+ * - logout and expiry are enforced server-side;
+ * - anonymous visitors never get a cookie, so page caching is untouched.
  */
 class SessionGate {
 
-	const KEY_LEGACY = 'govauth_user_data';
-	const KEY_META   = 'wpspid_session';
+	const COOKIE = 'wpspid_sid';
+	const PREFIX = 'wpspid_sess_';
 
-	/**
-	 * Make the session available.
-	 *
-	 * @param bool $create Start a brand new session if none exists (login only).
-	 */
-	public static function start( $create = false ) {
-		if ( PHP_SESSION_ACTIVE === session_status() ) {
-			return true;
-		}
-		if ( headers_sent() ) {
-			return false;
-		}
-		if ( ! $create && ! isset( $_COOKIE[ session_name() ] ) ) {
-			return false; // Anonymous visitor: do not open a session (page caching friendly).
-		}
-		session_set_cookie_params( array(
-			'lifetime' => 0,
-			'path'     => '/',
-			'secure'   => function_exists( 'is_ssl' ) ? is_ssl() : false,
+	/** @var array|null|false Per-request cache: array = loaded session, false = none, null = not read yet. */
+	private static $loaded = null;
+
+	private static function lifetime() {
+		return max( 60, (int) apply_filters( 'wpspid_session_lifetime', 2 * HOUR_IN_SECONDS ) );
+	}
+
+	private static function sid_from_cookie() {
+		$sid = isset( $_COOKIE[ self::COOKIE ] ) ? sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE ] ) ) : '';
+		return preg_match( '/^[a-f0-9]{64}$/', $sid ) ? $sid : '';
+	}
+
+	private static function key( $sid ) {
+		return self::PREFIX . hash( 'sha256', $sid );
+	}
+
+	private static function set_cookie( $value, $expires ) {
+		$path = defined( 'COOKIEPATH' ) && COOKIEPATH ? COOKIEPATH : '/';
+		return setcookie( self::COOKIE, $value, array(
+			'expires'  => $expires,
+			'path'     => $path,
+			'secure'   => is_ssl(),
 			'httponly' => true,
 			'samesite' => 'Lax',
 		) );
-		return session_start();
 	}
 
+	/**
+	 * Open a session for an authenticated citizen. The identifier is always brand new.
+	 *
+	 * @param array $attributes SAML attributes.
+	 * @param array $meta       idp, name_id, session_index, ...
+	 * @throws \Exception When the cookie can no longer be sent.
+	 */
 	public static function login( array $attributes, array $meta = array() ) {
-		if ( ! self::start( true ) ) {
-			throw new \Exception( 'Unable to start the session.' );
+		if ( headers_sent() ) {
+			throw new \Exception( 'Unable to start the session: headers already sent.' );
 		}
-		session_regenerate_id( true );
-		$_SESSION[ self::KEY_LEGACY ] = $attributes;
-		$_SESSION[ self::KEY_META ]   = array_merge( $meta, array( 'time' => time() ) );
+		$old = self::sid_from_cookie();
+		if ( '' !== $old ) {
+			delete_transient( self::key( $old ) );
+		}
+		$sid  = bin2hex( random_bytes( 32 ) );
+		$data = array(
+			'attributes' => $attributes,
+			'meta'       => array_merge( $meta, array( 'time' => time() ) ),
+		);
+		set_transient( self::key( $sid ), $data, self::lifetime() );
+		self::set_cookie( $sid, 0 );
+		$_COOKIE[ self::COOKIE ] = $sid;
+		self::$loaded            = $data;
 	}
 
 	public static function logout() {
-		if ( ! self::start() ) {
-			return;
+		$sid = self::sid_from_cookie();
+		if ( '' !== $sid ) {
+			delete_transient( self::key( $sid ) );
+			if ( ! headers_sent() ) {
+				self::set_cookie( '', time() - YEAR_IN_SECONDS );
+			}
 		}
-		unset( $_SESSION[ self::KEY_LEGACY ], $_SESSION[ self::KEY_META ] );
-		session_regenerate_id( true );
+		unset( $_COOKIE[ self::COOKIE ] );
+		self::$loaded = false;
+	}
+
+	private static function load() {
+		if ( null !== self::$loaded ) {
+			return self::$loaded;
+		}
+		self::$loaded = false;
+		$sid          = self::sid_from_cookie();
+		if ( '' === $sid ) {
+			return false; // Anonymous visitor.
+		}
+		$data = get_transient( self::key( $sid ) );
+		if ( ! is_array( $data ) || empty( $data['meta']['time'] ) || empty( $data['attributes'] ) ) {
+			return false;
+		}
+		if ( time() - (int) $data['meta']['time'] > self::lifetime() ) {
+			delete_transient( self::key( $sid ) );
+			return false;
+		}
+		self::$loaded = $data;
+		return $data;
 	}
 
 	public static function is_authenticated() {
-		return self::meta() !== array() && ! empty( $_SESSION[ self::KEY_LEGACY ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- dati scritti dal plugin stesso
+		return false !== self::load();
 	}
 
 	public static function attributes() {
-		return self::is_authenticated() ? (array) $_SESSION[ self::KEY_LEGACY ] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- dati scritti dal plugin stesso
+		$d = self::load();
+		return $d ? (array) $d['attributes'] : array();
 	}
 
 	/** Session metadata (idp, name_id, session_index, level, time) or empty array. */
 	public static function meta() {
-		if ( ! self::start() || empty( $_SESSION[ self::KEY_META ] ) ) {
-			return array();
-		}
-		$meta     = (array) $_SESSION[ self::KEY_META ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- dati scritti dal plugin stesso
-		$lifetime = (int) apply_filters( 'wpspid_session_lifetime', 2 * HOUR_IN_SECONDS );
-		if ( empty( $meta['time'] ) || time() - (int) $meta['time'] > $lifetime ) {
-			unset( $_SESSION[ self::KEY_LEGACY ], $_SESSION[ self::KEY_META ] );
-			return array();
-		}
-		return $meta;
+		$d = self::load();
+		return $d ? (array) $d['meta'] : array();
+	}
+
+	/** For tests: forget the per-request cache. */
+	public static function reset_cache() {
+		self::$loaded = null;
 	}
 }

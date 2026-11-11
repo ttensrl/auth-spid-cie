@@ -3,6 +3,7 @@
  * Tests for the parts that touch WordPress APIs, with in-memory stubs:  php tests/run_wp.php
  */
 require __DIR__ . '/bootstrap.php';
+ob_start(); // l'output resta in buffer: headers_sent() e' falso e i cookie di sessione si possono impostare anche da CLI.
 
 const MINUTE_IN_SECONDS = 60;
 const HOUR_IN_SECONDS   = 3600;
@@ -328,6 +329,41 @@ DataPreserver::$test_backup_root = null;
 DataPreserver::$test_dir         = null;
 DataPreserver::$test_folder      = null;
 $GLOBALS['opts'] = array();
+
+echo "== Sessione (cookie + transient, senza sessioni PHP)\n";
+use WpSpidCie\Auth\SessionGate;
+if ( ! defined( 'YEAR_IN_SECONDS' ) ) { define( 'YEAR_IN_SECONDS', 31536000 ); }
+if ( ! function_exists( 'is_ssl' ) ) { function is_ssl() { return false; } }
+if ( ! function_exists( 'sanitize_text_field' ) ) { function sanitize_text_field( $s ) { return trim( strip_tags( $s ) ); } }
+if ( ! function_exists( 'wp_unslash' ) ) { function wp_unslash( $v ) { return is_string( $v ) ? stripslashes( $v ) : $v; } }
+$GLOBALS['trans'] = array();
+unset( $_COOKIE[ SessionGate::COOKIE ] );
+SessionGate::reset_cache();
+ok( false === SessionGate::is_authenticated() && array() === SessionGate::attributes(), 'anonymous visitor: not authenticated, no cookie needed' );
+SessionGate::login( array( 'fiscalNumber' => 'TINIT-RSSMRA80A01H501U', 'name' => 'Mario' ), array( 'idp' => 'https://idp.example', 'session_index' => 's1' ) );
+$sid = $_COOKIE[ SessionGate::COOKIE ];
+ok( 1 === preg_match( '/^[a-f0-9]{64}$/', $sid ), 'the cookie carries a random 256-bit identifier' );
+ok( true === SessionGate::is_authenticated() && 'Mario' === SessionGate::attributes()['name'] && 's1' === SessionGate::meta()['session_index'], 'attributes and meta available after login' );
+ok( 1 === count( $GLOBALS['trans'] ) && false === strpos( (string) key( $GLOBALS['trans'] ), $sid ), 'server side the data sits under a hash, never under the cookie value' );
+SessionGate::reset_cache();
+ok( true === SessionGate::is_authenticated(), 'a new request with the same cookie finds the session' );
+$_COOKIE[ SessionGate::COOKIE ] = str_repeat( 'a', 64 );
+SessionGate::reset_cache();
+ok( false === SessionGate::is_authenticated(), 'an unknown identifier is not authenticated' );
+$_COOKIE[ SessionGate::COOKIE ] = '../' . $sid;
+SessionGate::reset_cache();
+ok( false === SessionGate::is_authenticated(), 'a malformed cookie is ignored' );
+$_COOKIE[ SessionGate::COOKIE ] = $sid;
+SessionGate::reset_cache();
+$k = key( $GLOBALS['trans'] ); $d = $GLOBALS['trans'][ $k ]; $d['meta']['time'] = time() - 3 * HOUR_IN_SECONDS; $GLOBALS['trans'][ $k ] = $d;
+ok( false === SessionGate::is_authenticated() && array() === $GLOBALS['trans'], 'expired session: refused and deleted server side' );
+SessionGate::login( array( 'name' => 'A' ) );
+$first = $_COOKIE[ SessionGate::COOKIE ];
+SessionGate::login( array( 'name' => 'B' ) );
+ok( $first !== $_COOKIE[ SessionGate::COOKIE ] && 1 === count( $GLOBALS['trans'] ), 'a new login issues a new identifier and drops the old session (no fixation)' );
+SessionGate::logout();
+SessionGate::reset_cache();
+ok( false === SessionGate::is_authenticated() && array() === $GLOBALS['trans'] && ! isset( $_COOKIE[ SessionGate::COOKIE ] ), 'logout removes the session on the server and the cookie' );
 
 echo "== Metadata snapshot (what was registered)\n";
 use WpSpidCie\Saml\MetadataSnapshot;
