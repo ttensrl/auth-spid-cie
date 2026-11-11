@@ -19,7 +19,7 @@ Features:
 * SPID and CIE login with signed AuthnRequests (Redirect and POST bindings).
 * Strict validation of SAML Responses: signature, Issuer, Destination, InResponseTo, Audience, timing, replay protection.
 * Signed SP metadata for public or private entities.
-* Ready-made buttons: `[spid_button]`, `[cie_button]`, `[wpspid_login]` and a dedicated login page.
+* Ready-made buttons: `[spid_button]`, `[cie_button]`, `[authspidcie_login]` and a dedicated login page.
 * Certificate generation or import from the admin panel, with an OpenSSL capability check.
 * No Composer, no bundled third-party libraries.
 
@@ -52,11 +52,11 @@ No. Citizens get a protected PHP session with their SAML attributes, available t
 
 = Where are the keys stored? =
 
-In the WordPress database (network options, autoload off), not in files: updating, reinstalling or redeploying the plugin never loses them, and nothing sensitive sits in the plugin folder. Database backups contain the private key. To store it encrypted, define `WPSPID_SECRET` (a long random string) in wp-config.php: the key is then encrypted with libsodium. If that constant is lost the key cannot be read and a new certificate must be generated and registered again with AgID/CIE.
+In the WordPress database (network options, autoload off), not in files: updating, reinstalling or redeploying the plugin never loses them, and nothing sensitive sits in the plugin folder. Database backups contain the private key. To store it encrypted, define `AUTHSPIDCIE_SECRET` (a long random string) in wp-config.php: the key is then encrypted with libsodium. If that constant is lost the key cannot be read and a new certificate must be generated and registered again with AgID/CIE.
 
 = What happens to the certificate when I delete the plugin? =
 
-It is kept, together with the registered metadata and the organization settings, because registering again with AgID/CIE is costly. Sessions and caches are removed. Define `WPSPID_REMOVE_DATA_ON_UNINSTALL` as true in wp-config.php to delete everything on uninstall.
+It is kept, together with the registered metadata and the organization settings, because registering again with AgID/CIE is costly. Sessions and caches are removed. Define `AUTHSPIDCIE_REMOVE_DATA_ON_UNINSTALL` as true in wp-config.php to delete everything on uninstall.
 
 = Which PHP version is required? =
 
@@ -72,7 +72,7 @@ PHP 8.0 or later, with the openssl, dom, libxml and mbstring extensions.
 
 * The plugin does not create WordPress users and does not use PHP sessions. A random cookie points to the SPID/CIE attributes (name, tax code...) kept server-side for a limited time (default 2 hours) and deleted at logout.
 * The tax code and other attributes are not stored permanently by the plugin; your site decides what to do with them.
-* The private key is stored in the database, optionally encrypted with libsodium (`WPSPID_SECRET`).
+* The private key is stored in the database, optionally encrypted with libsodium (`AUTHSPIDCIE_SECRET`).
 
 == Changelog ==
 

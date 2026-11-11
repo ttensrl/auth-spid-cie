@@ -1,7 +1,7 @@
 <?php
-namespace WpSpidCie\Saml;
+namespace AuthSpidCie\Saml;
 
-use WpSpidCie\Cert\CertificateManager;
+use AuthSpidCie\Cert\CertificateManager;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

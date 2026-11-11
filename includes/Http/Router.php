@@ -1,23 +1,23 @@
 <?php
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- endpoint pubblici di login SPID/CIE: parametri GET di sola lettura, l'autenticita' viene dalla firma SAML.
-namespace WpSpidCie\Http;
+namespace AuthSpidCie\Http;
 
-use WpSpidCie\Auth\SessionGate;
-use WpSpidCie\Idp\IdpRepository;
-use WpSpidCie\Saml\AuthnRequestBuilder;
-use WpSpidCie\Saml\Bindings;
-use WpSpidCie\Saml\ResponseValidator;
-use WpSpidCie\Saml\ValidationException;
-use WpSpidCie\State\ReplayCache;
-use WpSpidCie\State\RequestStore;
-use WpSpidCie\Support\Config;
+use AuthSpidCie\Auth\SessionGate;
+use AuthSpidCie\Idp\IdpRepository;
+use AuthSpidCie\Saml\AuthnRequestBuilder;
+use AuthSpidCie\Saml\Bindings;
+use AuthSpidCie\Saml\ResponseValidator;
+use AuthSpidCie\Saml\ValidationException;
+use AuthSpidCie\State\ReplayCache;
+use AuthSpidCie\State\RequestStore;
+use AuthSpidCie\Support\Config;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
- * Handles plugin routing via query vars (?wpspid=choose|login|acs|slo|metadata).
+ * Handles plugin routing via query vars (?authspidcie=choose|login|acs|slo|metadata).
  */
 class Router {
 	private static $instance = null;
@@ -35,13 +35,13 @@ class Router {
 	}
 
 	public function add_query_vars( $vars ) {
-		$vars[] = 'wpspid';
+		$vars[] = 'authspidcie';
 		$vars[] = 'service';
 		return $vars;
 	}
 
 	public function handle_requests() {
-		$action = get_query_var( 'wpspid' );
+		$action = get_query_var( 'authspidcie' );
 		if ( ! $action ) {
 			return;
 		}
@@ -106,13 +106,13 @@ class Router {
 			return __( 'Log in with SPID or CIE', 'auth-spid-cie' ) . ' - ' . get_bloginfo( 'name' );
 		} );
 		add_filter( 'body_class', function ( $classes ) {
-			$classes[] = 'wpspid-choose';
+			$classes[] = 'authspidcie-choose';
 			return $classes;
 		} );
-		\WpSpidCie\Ui\Buttons::enqueue();
+		\AuthSpidCie\Ui\Buttons::enqueue();
 		$this->make_virtual_page( __( 'Log in with SPID or CIE', 'auth-spid-cie' ) );
 		get_header();
-		echo '<main id="main-content" class="wpspid-main">' . \WpSpidCie\Ui\Buttons::page( array( 'return' => $return ) ) . '</main>'; // phpcs:ignore WordPress.Security.EscapeOutput -- every part is escaped in Buttons.
+		echo '<main id="main-content" class="authspidcie-main">' . \AuthSpidCie\Ui\Buttons::page( array( 'return' => $return ) ) . '</main>'; // phpcs:ignore WordPress.Security.EscapeOutput -- every part is escaped in Buttons.
 		get_footer();
 		exit;
 	}
@@ -190,7 +190,7 @@ class Router {
 				Bindings::send_post( $sso_url, $request['xml'], '' );
 			}
 		} catch ( \Exception $e ) {
-			\WpSpidCie\Support\Log::write( '[auth-spid-cie] login: ' . $e->getMessage() );
+			\AuthSpidCie\Support\Log::write( '[auth-spid-cie] login: ' . $e->getMessage() );
 			$this->fail( __( 'Unable to start authentication. Please contact the site administrator.', 'auth-spid-cie' ), 500 );
 		}
 	}
@@ -207,7 +207,7 @@ class Router {
 
 		// Locate the pending request through InResponseTo (single use).
 		$in_response_to = ResponseValidator::peek_in_response_to( $saml_response );
-		if ( '' === $in_response_to || 0 !== strpos( $in_response_to, 'wpspid_' ) ) {
+		if ( '' === $in_response_to || 0 !== strpos( $in_response_to, 'authspidcie_' ) ) {
 			$this->fail( __( 'The response cannot be matched to any request.', 'auth-spid-cie' ) );
 		}
 		$state = RequestStore::consume( $in_response_to );
@@ -246,16 +246,16 @@ class Router {
 				'authn_class'   => $result['authn_class_ref'],
 			) );
 
-			do_action( 'wpspid_authenticated', $result['attributes'], null, $idp['entity_id'] );
+			do_action( 'authspidcie_authenticated', $result['attributes'], null, $idp['entity_id'] );
 
 			wp_safe_redirect( ! empty( $state['return_to'] ) ? $state['return_to'] : home_url( '/' ) );
 			exit;
 
 		} catch ( ValidationException $e ) {
-			\WpSpidCie\Support\Log::write( sprintf( '[auth-spid-cie] ACS rejected (%s): %s %s', $e->reason, $e->getMessage(), wp_json_encode( $e->details ) ) );
+			\AuthSpidCie\Support\Log::write( sprintf( '[auth-spid-cie] ACS rejected (%s): %s %s', $e->reason, $e->getMessage(), wp_json_encode( $e->details ) ) );
 			$this->fail( $this->user_message( $e ) );
 		} catch ( \Exception $e ) {
-			\WpSpidCie\Support\Log::write( '[auth-spid-cie] ACS error: ' . $e->getMessage() );
+			\AuthSpidCie\Support\Log::write( '[auth-spid-cie] ACS error: ' . $e->getMessage() );
 			$this->fail( __( 'Error during authentication. Please try again.', 'auth-spid-cie' ), 500 );
 		}
 	}
@@ -290,7 +290,7 @@ class Router {
 		// Local logout only (LogoutRequest towards the IdP is not implemented yet).
 		// A nonce is required: otherwise any page could log citizens out (CSRF).
 		$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
-		if ( ! wp_verify_nonce( $nonce, 'wpspid_logout' ) ) {
+		if ( ! wp_verify_nonce( $nonce, 'authspidcie_logout' ) ) {
 			wp_safe_redirect( home_url( '/' ) );
 			exit;
 		}
@@ -304,9 +304,9 @@ class Router {
 	private function handle_metadata() {
 		$service = 'cie' === get_query_var( 'service' ) ? 'cie' : 'spid';
 		try {
-			$xml = \WpSpidCie\Saml\MetadataBuilder::generate( $service );
+			$xml = \AuthSpidCie\Saml\MetadataBuilder::generate( $service );
 		} catch ( \Exception $e ) {
-			\WpSpidCie\Support\Log::write( '[auth-spid-cie] metadata: ' . $e->getMessage() );
+			\AuthSpidCie\Support\Log::write( '[auth-spid-cie] metadata: ' . $e->getMessage() );
 			$this->fail( __( 'Metadata not available: generate the Service Provider certificate first.', 'auth-spid-cie' ), 503 );
 		}
 		header( 'Content-Type: application/samlmetadata+xml; charset=UTF-8' );

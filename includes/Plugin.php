@@ -1,5 +1,5 @@
 <?php
-namespace WpSpidCie;
+namespace AuthSpidCie;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -25,24 +25,24 @@ class Plugin {
 	private function init() {
 		// Chiavi, certificati e metadata registrati stanno nel database. Le versioni precedenti li
 		// tenevano in file (data/): se ne restano, li si sposta qui (con verifica prima di cancellare).
-		\WpSpidCie\Cert\Migrator::maybe_run();
+		\AuthSpidCie\Cert\Migrator::maybe_run();
 		add_action( 'admin_notices', array( $this, 'admin_notices' ) );
 
 		// Initialize settings (sempre: serve a vedere perche' il plugin e' bloccato).
-		\WpSpidCie\Settings\AdminPage::get_instance();
+		\AuthSpidCie\Settings\AdminPage::get_instance();
 
 		// Se la verifica pratica di OpenSSL e' fallita il login e i metadata restano spenti.
-		$probe = \WpSpidCie\Support\Requirements::cached();
+		$probe = \AuthSpidCie\Support\Requirements::cached();
 		if ( $probe && empty( $probe['ok'] ) ) {
 			return;
 		}
 
 		// Initialize router.
-		\WpSpidCie\Http\Router::get_instance();
+		\AuthSpidCie\Http\Router::get_instance();
 
-		// Pulsanti ([spid_button], [cie_button], [wpspid_login]) e integrazione con il tema.
-		\WpSpidCie\Ui\Shortcodes::register();
-		\WpSpidCie\Integrations\Theme::register();
+		// Pulsanti ([spid_button], [cie_button], [authspidcie_login]) e integrazione con il tema.
+		\AuthSpidCie\Ui\Shortcodes::register();
+		\AuthSpidCie\Integrations\Theme::register();
 
 		// Add hooks.
 		add_action( 'init', array( $this, 'on_init' ) );
@@ -52,18 +52,18 @@ class Plugin {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		$probe = \WpSpidCie\Support\Requirements::cached();
+		$probe = \AuthSpidCie\Support\Requirements::cached();
 		if ( $probe && empty( $probe['ok'] ) ) {
-			echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'SPID/CIE blocked:', 'auth-spid-cie' ) . '</strong> ' . esc_html__( 'this server does not allow generating or using certificates.', 'auth-spid-cie' ) . '</p><ul style="list-style:disc;margin-left:20px"><li>' . implode( '</li><li>', array_map( 'esc_html', $probe['errors'] ) ) . '</li></ul><p>' . esc_html__( 'Login, ACS and metadata are disabled until the problem is solved.', 'auth-spid-cie' ) . ' <a href="' . esc_url( admin_url( 'options-general.php?page=wpspid-settings' ) ) . '">' . esc_html__( 'Check again', 'auth-spid-cie' ) . '</a>.</p></div>';
+			echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'SPID/CIE blocked:', 'auth-spid-cie' ) . '</strong> ' . esc_html__( 'this server does not allow generating or using certificates.', 'auth-spid-cie' ) . '</p><ul style="list-style:disc;margin-left:20px"><li>' . implode( '</li><li>', array_map( 'esc_html', $probe['errors'] ) ) . '</li></ul><p>' . esc_html__( 'Login, ACS and metadata are disabled until the problem is solved.', 'auth-spid-cie' ) . ' <a href="' . esc_url( admin_url( 'options-general.php?page=authspidcie-settings' ) ) . '">' . esc_html__( 'Check again', 'auth-spid-cie' ) . '</a>.</p></div>';
 		}
 		foreach ( array( 'spid' => 'SPID', 'cie' => 'CIE' ) as $service => $label ) {
-			$state = \WpSpidCie\Cert\CertificateManager::key_state( $service );
-			if ( \WpSpidCie\Cert\KeyVault::S_MISSING === $state['status'] || $state['readable'] ) {
+			$state = \AuthSpidCie\Cert\CertificateManager::key_state( $service );
+			if ( \AuthSpidCie\Cert\KeyVault::S_MISSING === $state['status'] || $state['readable'] ) {
 				continue;
 			}
-			echo '<div class="notice notice-error"><p><strong>' . esc_html( sprintf( /* translators: %s: SPID or CIE. */ __( 'SPID/CIE (%s): the private key is unusable.', 'auth-spid-cie' ), $label ) ) . '</strong> ' . esc_html( \WpSpidCie\Cert\KeyVault::message( $state['status'] ) ) . ' ' . esc_html__( 'Login and metadata for this service are disabled.', 'auth-spid-cie' ) . '</p></div>';
+			echo '<div class="notice notice-error"><p><strong>' . esc_html( sprintf( /* translators: %s: SPID or CIE. */ __( 'SPID/CIE (%s): the private key is unusable.', 'auth-spid-cie' ), $label ) ) . '</strong> ' . esc_html( \AuthSpidCie\Cert\KeyVault::message( $state['status'] ) ) . ' ' . esc_html__( 'Login and metadata for this service are disabled.', 'auth-spid-cie' ) . '</p></div>';
 		}
-		$issues = \WpSpidCie\Cert\Migrator::issues();
+		$issues = \AuthSpidCie\Cert\Migrator::issues();
 		if ( $issues ) {
 			echo '<div class="notice notice-warning"><p><strong>' . esc_html__( 'SPID/CIE: the move of the old key files to the database is not complete.', 'auth-spid-cie' ) . '</strong> ' . esc_html__( 'Nothing was deleted: the old files are still where they were.', 'auth-spid-cie' ) . '</p><ul style="list-style:disc;margin-left:20px"><li>' . implode( '</li><li>', array_map( 'esc_html', $issues ) ) . '</li></ul></div>';
 		}

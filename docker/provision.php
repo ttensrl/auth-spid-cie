@@ -4,8 +4,8 @@
  * Variabili d'ambiente: SP_TYPE=public|private (default public).
  * Dati dell'ente FITTIZI, solo per test locali.
  */
-use WpSpidCie\Cert\CertificateManager;
-use WpSpidCie\Support\Config;
+use AuthSpidCie\Cert\CertificateManager;
+use AuthSpidCie\Support\Config;
 
 $type    = 'private' === getenv( 'SP_TYPE' ) ? 'private' : 'public';
 $idp_xml = file_exists( '/work/.work/fake-idp.xml' ) ? file_get_contents( '/work/.work/fake-idp.xml' ) : '';
@@ -49,8 +49,8 @@ $opts = array(
 	'test_demo'        => 0,
 	'test_idp_xml'     => $idp_xml,
 );
-update_option( 'wpspid_options', $opts );
-update_option( 'wpspid_options', array_merge( get_option( 'wpspid_options' ), array() ) );
+update_option( 'authspidcie_options', $opts );
+update_option( 'authspidcie_options', array_merge( get_option( 'authspidcie_options' ), array() ) );
 
 foreach ( array( 'spid', 'cie' ) as $service ) {
 	CertificateManager::generate( $service, array(
@@ -63,5 +63,5 @@ foreach ( array( 'spid', 'cie' ) as $service ) {
 		'public'         => 'public' === $type,
 	), 730 );
 }
-\WpSpidCie\Idp\TestIdps::refresh();
+\AuthSpidCie\Idp\TestIdps::refresh();
 WP_CLI::success( "Plugin configurato (ente $type), certificati SPID e CIE generati." );

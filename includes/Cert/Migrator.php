@@ -1,7 +1,7 @@
 <?php
-namespace WpSpidCie\Cert;
+namespace AuthSpidCie\Cert;
 
-use WpSpidCie\Saml\MetadataSnapshot;
+use AuthSpidCie\Saml\MetadataSnapshot;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -35,8 +35,8 @@ class Migrator {
 			$u      = wp_upload_dir();
 			$legacy = empty( $u['basedir'] ) ? '' : trailingslashit( $u['basedir'] ) . 'wp-spid-cie-private/';
 		}
-		$dirs = array( 'data' => WPSPID_PLUGIN_DIR . 'data/', 'legacy' => $legacy );
-		return (array) apply_filters( 'wpspid_migration_dirs', $dirs );
+		$dirs = array( 'data' => AUTHSPIDCIE_PLUGIN_DIR . 'data/', 'legacy' => $legacy );
+		return (array) apply_filters( 'authspidcie_migration_dirs', $dirs );
 	}
 
 	/** Una volta per richiesta, e solo se esiste ancora una vecchia cartella (due is_dir). */

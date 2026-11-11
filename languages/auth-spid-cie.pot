@@ -54,19 +54,19 @@ msgid "Ask your hosting provider to enable the PHP openssl extension and its fun
 msgstr ""
 
 #: includes/Cert/KeyVault.php:154
-msgid "Restore the original WPSPID_SECRET constant or generate a new certificate (it will have to be registered again with AgID/CIE)."
+msgid "Restore the original AUTHSPIDCIE_SECRET constant or generate a new certificate (it will have to be registered again with AgID/CIE)."
 msgstr ""
 
 #: includes/Cert/KeyVault.php:157
-msgid "The private key is unreadable: it is stored encrypted but WPSPID_SECRET is not defined in wp-config.php."
+msgid "The private key is unreadable: it is stored encrypted but AUTHSPIDCIE_SECRET is not defined in wp-config.php."
 msgstr ""
 
 #: includes/Cert/KeyVault.php:159
-msgid "The private key is unreadable: it was encrypted with a different WPSPID_SECRET."
+msgid "The private key is unreadable: it was encrypted with a different AUTHSPIDCIE_SECRET."
 msgstr ""
 
 #: includes/Cert/KeyVault.php:161
-msgid "The private key cannot be used: the PHP sodium extension is not available but is needed (WPSPID_SECRET is defined or the key is stored encrypted). Enable the extension, or remove the constant if the key was never encrypted."
+msgid "The private key cannot be used: the PHP sodium extension is not available but is needed (AUTHSPIDCIE_SECRET is defined or the key is stored encrypted). Enable the extension, or remove the constant if the key was never encrypted."
 msgstr ""
 
 #: includes/Cert/KeyVault.php:163
@@ -685,7 +685,7 @@ msgid "Data"
 msgstr ""
 
 #: includes/Settings/AdminPage.php:410
-msgid "Keys, certificates and registered metadata are stored in the <strong>WordPress database</strong> (not in files), so updating or reinstalling the plugin does not lose them. They are kept when the plugin is deleted unless <code>WPSPID_REMOVE_DATA_ON_UNINSTALL</code> is set. Database backups contain the private key: to store it encrypted, define <code>WPSPID_SECRET</code> in wp-config.php."
+msgid "Keys, certificates and registered metadata are stored in the <strong>WordPress database</strong> (not in files), so updating or reinstalling the plugin does not lose them. They are kept when the plugin is deleted unless <code>AUTHSPIDCIE_REMOVE_DATA_ON_UNINSTALL</code> is set. Database backups contain the private key: to store it encrypted, define <code>AUTHSPIDCIE_SECRET</code> in wp-config.php."
 msgstr ""
 
 #: includes/Settings/AdminPage.php:415
@@ -753,15 +753,15 @@ msgid "Refresh Identity Provider list"
 msgstr ""
 
 #: includes/Settings/AdminPage.php:473
-msgid "Private key stored encrypted (WPSPID_SECRET)."
+msgid "Private key stored encrypted (AUTHSPIDCIE_SECRET)."
 msgstr ""
 
 #: includes/Settings/AdminPage.php:475
-msgid "Private key stored in the database WITHOUT encryption: database backups contain it. To encrypt it, define WPSPID_SECRET in wp-config.php (see the documentation)."
+msgid "Private key stored in the database WITHOUT encryption: database backups contain it. To encrypt it, define AUTHSPIDCIE_SECRET in wp-config.php (see the documentation)."
 msgstr ""
 
 #: includes/Settings/AdminPage.php:477
-msgid "WPSPID_SECRET is defined but the private key is still stored without encryption."
+msgid "AUTHSPIDCIE_SECRET is defined but the private key is still stored without encryption."
 msgstr ""
 
 #: includes/Settings/AdminPage.php:480

@@ -1,7 +1,7 @@
 <?php
-namespace WpSpidCie\Integrations;
+namespace AuthSpidCie\Integrations;
 
-use WpSpidCie\Support\Config;
+use AuthSpidCie\Support\Config;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -11,14 +11,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Integrazione con il tema WP Digital Italia (e i suoi child: ASL, Comuni, Scuole):
  *  - `dci_area_personale`: il pulsante "Area personale" dell'header porta al login SPID/CIE e,
  *    da collegato, mostra il nome del cittadino;
- *  - `wpspid_logo_url`: fornisce il logo CIE del tema (il plugin non lo include).
+ *  - `authspidcie_logo_url`: fornisce il logo CIE del tema (il plugin non lo include).
  * Senza il tema i due filtri non vengono mai chiamati: sono innocui.
  */
 class Theme {
 
 	public static function register() {
 		add_filter( 'dci_area_personale', array( __CLASS__, 'area_personale' ), 20 );
-		add_filter( 'wpspid_logo_url', array( __CLASS__, 'logo' ), 10, 2 );
+		add_filter( 'authspidcie_logo_url', array( __CLASS__, 'logo' ), 10, 2 );
 	}
 
 	/**
@@ -30,9 +30,9 @@ class Theme {
 			return $area;
 		}
 		$area        = (array) $area;
-		$area['url'] = home_url( '/?wpspid=choose' );
-		if ( function_exists( 'wpspid_is_authenticated' ) && wpspid_is_authenticated() ) {
-			$area['label'] = self::label( wpspid_get_attributes(), isset( $area['label'] ) ? $area['label'] : '' );
+		$area['url'] = home_url( '/?authspidcie=choose' );
+		if ( function_exists( 'authspidcie_is_authenticated' ) && authspidcie_is_authenticated() ) {
+			$area['label'] = self::label( authspidcie_get_attributes(), isset( $area['label'] ) ? $area['label'] : '' );
 		}
 		return $area;
 	}

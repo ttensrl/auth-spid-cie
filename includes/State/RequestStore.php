@@ -1,5 +1,5 @@
 <?php
-namespace WpSpidCie\State;
+namespace AuthSpidCie\State;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -18,7 +18,7 @@ class RequestStore {
 	 * @return void
 	 */
 	public static function set( $request_id, $data ) {
-		set_transient( 'wpspid_req_' . $request_id, $data, 10 * MINUTE_IN_SECONDS );
+		set_transient( 'authspidcie_req_' . $request_id, $data, 10 * MINUTE_IN_SECONDS );
 	}
 
 	/**
@@ -28,7 +28,7 @@ class RequestStore {
 	 * @return array|false
 	 */
 	public static function consume( $request_id ) {
-		$key = 'wpspid_req_' . $request_id;
+		$key = 'authspidcie_req_' . $request_id;
 		$data = get_transient( $key );
 		if ( false !== $data ) {
 			delete_transient( $key );

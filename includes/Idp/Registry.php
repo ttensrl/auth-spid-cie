@@ -1,5 +1,5 @@
 <?php
-namespace WpSpidCie\Idp;
+namespace AuthSpidCie\Idp;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Registry {
 	private static $instance = null;
-	const TRANSIENT_KEY = 'wpspid_registry_spid';
+	const TRANSIENT_KEY = 'authspidcie_registry_spid';
 	const REGISTRY_URL = 'https://registry.spid.gov.it/entities-idp?output=json';
 
 	public static function get_instance() {
@@ -34,7 +34,7 @@ class Registry {
 		$idps = $this->fetch_and_parse();
 		if ( empty( $idps ) ) {
 			// Fallback to the bundled snapshot of the registry.
-			$fixture = WPSPID_PLUGIN_DIR . 'resources/spid-idps.json';
+			$fixture = AUTHSPIDCIE_PLUGIN_DIR . 'resources/spid-idps.json';
 			if ( file_exists( $fixture ) ) {
 				$json = file_get_contents( $fixture );
 				$data = json_decode( $json, true );

@@ -1,5 +1,5 @@
 <?php
-namespace WpSpidCie\Support;
+namespace AuthSpidCie\Support;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Log {
 	public static function write( $message ) {
 		$on = defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG;
-		if ( apply_filters( 'wpspid_log_enabled', $on ) ) {
+		if ( apply_filters( 'authspidcie_log_enabled', $on ) ) {
 			error_log( $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- log opzionale, attivo solo con WP_DEBUG_LOG
 		}
 	}

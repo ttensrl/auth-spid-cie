@@ -12,7 +12,7 @@
 
 - **SPID e CIE** (SAML 2.0): AuthnRequest firmate (Redirect e POST), validazione rigorosa delle Response, metadata firmato per l'ente **pubblico o privato** (ContactPerson ed estensioni `spid:`, `fpa:`, `cie:`).
 - **Sessione "gate"** per cittadini senza account WordPress: gli attributi SAML sono disponibili al tema e ad altri plugin. **Niente sessioni PHP**: un cookie casuale a 256 bit (`HttpOnly`, `SameSite=Lax`, `Secure` in HTTPS) punta a dati conservati sul server in un transient sotto il suo hash; nuovo identificativo a ogni login, scadenza e logout applicati lato server, nessun cookie ai visitatori anonimi (le pagine restano cacheabili).
-- **Pulsanti pronti**: `[spid_button]`, `[cie_button]`, `[wpspid_login]` e una pagina di accesso dedicata (`/?wpspid=choose`). Elenco dei gestori in **ordine casuale** e link *Maggiori informazioni / Non hai SPID? / Serve aiuto?* come da linee guida; markup accessibile, senza JavaScript.
+- **Pulsanti pronti**: `[spid_button]`, `[cie_button]`, `[authspidcie_login]` e una pagina di accesso dedicata (`/?authspidcie=choose`). Elenco dei gestori in **ordine casuale** e link *Maggiori informazioni / Non hai SPID? / Serve aiuto?* come da linee guida; markup accessibile, senza JavaScript.
 - **Integrazione con il tema WP Digital Italia** (e child ASL, Comuni, Scuole): il pulsante *Area personale* dell'header porta al login e, da collegato, mostra il nome del cittadino. Colori ereditati dal tema.
 - **Certificati**: generazione dal pannello (soggetto conforme all'Avviso SPID n.29 v.3) o import di chiave e certificato già registrati. Verifica pratica di OpenSSL all'attivazione, con blocco e avviso se il server non è idoneo.
 - **Metadata registrato**: salvi il metadata inviato ad AgID/CIE e il plugin ti avvisa se quello attuale è diverso (confronto normalizzato).
@@ -56,7 +56,7 @@ Sito (ACS) ◀──────────────────────
 ### Shortcode
 
 ```
-[wpspid_login]                         pagina di accesso completa (SPID + CIE)
+[authspidcie_login]                         pagina di accesso completa (SPID + CIE)
 [spid_button return="/area-riservata/"] solo SPID, con l'elenco dei gestori
 [cie_button level="2"]                 solo CIE
 ```
@@ -64,17 +64,17 @@ Sito (ACS) ◀──────────────────────
 ### Funzioni PHP (per temi e altri plugin)
 
 ```php
-wpspid_is_authenticated();            // bool
-wpspid_get_attributes();              // array: name, familyName, fiscalNumber, ...
-wpspid_get_attribute( 'fiscalNumber' );
-wpspid_login_url( $idp_entity_id, 2, $return_to );
-wpspid_logout_url( $return_to );
+authspidcie_is_authenticated();            // bool
+authspidcie_get_attributes();              // array: name, familyName, fiscalNumber, ...
+authspidcie_get_attribute( 'fiscalNumber' );
+authspidcie_login_url( $idp_entity_id, 2, $return_to );
+authspidcie_logout_url( $return_to );
 ```
 
 ```php
 // Proteggere una pagina o un servizio
-if ( ! wpspid_is_authenticated() ) {
-    wp_safe_redirect( home_url( '/?wpspid=choose&returnTo=' . rawurlencode( get_permalink() ) ) );
+if ( ! authspidcie_is_authenticated() ) {
+    wp_safe_redirect( home_url( '/?authspidcie=choose&returnTo=' . rawurlencode( get_permalink() ) ) );
     exit;
 }
 ```
@@ -83,9 +83,9 @@ if ( ! wpspid_is_authenticated() ) {
 
 | | |
 |---|---|
-| `do_action( 'wpspid_authenticated', $attributes, null, $idp_entity_id )` | dopo un login valido (es. per registrare l'accesso o creare un utente) |
-| `apply_filters( 'wpspid_session_lifetime', 2 * HOUR_IN_SECONDS )` | durata massima della sessione (default 2 ore) |
-| `apply_filters( 'wpspid_logo_url', $url, $service )` | logo dei pulsanti (`'spid'` incluso, `'cie'` fornito dal tema) |
+| `do_action( 'authspidcie_authenticated', $attributes, null, $idp_entity_id )` | dopo un login valido (es. per registrare l'accesso o creare un utente) |
+| `apply_filters( 'authspidcie_session_lifetime', 2 * HOUR_IN_SECONDS )` | durata massima della sessione (default 2 ore) |
+| `apply_filters( 'authspidcie_logo_url', $url, $service )` | logo dei pulsanti (`'spid'` incluso, `'cie'` fornito dal tema) |
 
 ### Integrazione con il tema ASL / WP Digital Italia
 
@@ -93,15 +93,15 @@ Con il tema attivo l'integrazione è automatica (`includes/Integrations/Theme.ph
 
 - il filtro `dci_area_personale` punta al login e mostra il nome del cittadino da collegato;
 - il logo CIE viene preso da `assets/images/identity/cie-bianco.svg` del tema (il plugin non lo include);
-- i pulsanti usano i colori del tema: `--wpspid-color`, poi `--asl-link`, poi `--bs-primary`, poi il blu AgID.
+- i pulsanti usano i colori del tema: `--authspidcie-color`, poi `--asl-link`, poi `--bs-primary`, poi il blu AgID.
 
 ## Sicurezza
 
 - Firma XML verificata sull'**elemento specifico** (Assertion): contro *signature wrapping*, ID duplicati, SHA-1, DOCTYPE/entità esterne. Gli attributi si leggono solo dall'Assertion firmata.
 - Richiesta e asserzione si consumano **una sola volta** (anti-replay). `Destination`, `Recipient`, `Audience`, livello di garanzia e tempi sono controllati.
-- **Chiave privata e certificato stanno nel database** (opzioni di rete, `autoload=no`), non in file: niente da proteggere nel filesystem, funziona anche con filesystem in sola lettura. Se definisci `WPSPID_SECRET` in `wp-config.php` la chiave viene **cifrata con libsodium** (`secretbox`); senza, è salvata in chiaro e i backup del database la contengono. Il pannello non la mostra mai.
+- **Chiave privata e certificato stanno nel database** (opzioni di rete, `autoload=no`), non in file: niente da proteggere nel filesystem, funziona anche con filesystem in sola lettura. Se definisci `AUTHSPIDCIE_SECRET` in `wp-config.php` la chiave viene **cifrata con libsodium** (`secretbox`); senza, è salvata in chiaro e i backup del database la contengono. Il pannello non la mostra mai.
 - Gli attributi SAML sono sempre escapati in output.
-- **Aggiornare, reinstallare o rifare un deploy non cancella i dati**, perché non stanno nella cartella del plugin. Anche **eliminare il plugin** li lascia (certificato, chiave, metadata registrato e impostazioni) a meno che in `wp-config.php` ci sia `WPSPID_REMOVE_DATA_ON_UNINSTALL`: rifare la registrazione presso AgID/CIE costa. Se perdi `WPSPID_SECRET` la chiave cifrata è illeggibile e il certificato va rigenerato e ri-registrato. Dettagli in [`docs/STORAGE.md`](docs/STORAGE.md).
+- **Aggiornare, reinstallare o rifare un deploy non cancella i dati**, perché non stanno nella cartella del plugin. Anche **eliminare il plugin** li lascia (certificato, chiave, metadata registrato e impostazioni) a meno che in `wp-config.php` ci sia `AUTHSPIDCIE_REMOVE_DATA_ON_UNINSTALL`: rifare la registrazione presso AgID/CIE costa. Se perdi `AUTHSPIDCIE_SECRET` la chiave cifrata è illeggibile e il certificato va rigenerato e ri-registrato. Dettagli in [`docs/STORAGE.md`](docs/STORAGE.md).
 
 ## Stato e limiti
 
@@ -116,7 +116,7 @@ Cosa **non** è ancora fatto o noto:
 - **Nessun collaudo con gestori d'identità reali**, né con il validator/demo AgID online, né con la pre-produzione CIE: sono i passi prima della produzione.
 - Con `spid-sp-test`: AuthnRequest con `RelayState` mancante (SPID e CIE), firma dell'AuthnRequest CIE non validata dallo strumento, Response con Issuer senza `Format` rifiutata, login CIE simulato rifiutato con l'IdP di test generico. Sono da analizzare.
 - Pagina impostazioni, metadata e interfaccia sono in italiano e la traduzione non è ancora predisposta.
-- Fuori scopo: eIDAS, modalità proxy/JWT, creazione automatica di utenti WordPress (c'è l'hook `wpspid_authenticated`), multisite con certificati per sito, asserzioni cifrate.
+- Fuori scopo: eIDAS, modalità proxy/JWT, creazione automatica di utenti WordPress (c'è l'hook `authspidcie_authenticated`), multisite con certificati per sito, asserzioni cifrate.
 
 ## Sviluppo e test
 

@@ -1,7 +1,7 @@
 <?php
-namespace WpSpidCie\Idp;
+namespace AuthSpidCie\Idp;
 
-use WpSpidCie\Support\Config;
+use AuthSpidCie\Support\Config;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -72,7 +72,7 @@ class TestIdps {
 	}
 
 	private static function load( $url, $insecure ) {
-		$key    = 'wpspid_test_' . md5( $url );
+		$key    = 'authspidcie_test_' . md5( $url );
 		$cached = get_transient( $key );
 		if ( is_array( $cached ) ) {
 			return $cached ? $cached : null; // empty array = cached failure.
@@ -85,7 +85,7 @@ class TestIdps {
 	public static function refresh() {
 		global $wpdb;
 		if ( isset( $wpdb ) ) {
-			$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_wpspid\_test\_%' OR option_name LIKE '\_transient\_timeout\_wpspid\_test\_%'" ); // phpcs:ignore WordPress.DB
+			$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_authspidcie\_test\_%' OR option_name LIKE '\_transient\_timeout\_authspidcie\_test\_%'" ); // phpcs:ignore WordPress.DB
 		}
 	}
 }

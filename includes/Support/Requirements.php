@@ -1,8 +1,8 @@
 <?php
 // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- i messaggi delle eccezioni non vengono stampati direttamente: chi li mostra li esegue con esc_html().
-namespace WpSpidCie\Support;
+namespace AuthSpidCie\Support;
 
-use WpSpidCie\Cert\CertificateManager;
+use AuthSpidCie\Cert\CertificateManager;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Requirements {
 
-	const TRANSIENT = 'wpspid_probe';
+	const TRANSIENT = 'authspidcie_probe';
 
 	const EXTENSIONS = array( 'openssl', 'dom', 'libxml', 'mbstring' );
 

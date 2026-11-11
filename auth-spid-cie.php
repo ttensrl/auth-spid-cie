@@ -19,17 +19,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants.
-define( 'WPSPID_VERSION', '0.1.0' );
-define( 'WPSPID_PLUGIN_FILE', __FILE__ );
-define( 'WPSPID_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'WPSPID_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'AUTHSPIDCIE_VERSION', '0.1.0' );
+define( 'AUTHSPIDCIE_PLUGIN_FILE', __FILE__ );
+define( 'AUTHSPIDCIE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'AUTHSPIDCIE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 /**
  * Basic PSR-4 Autoloader.
  */
 spl_autoload_register( function ( $class ) {
-	$prefix = 'WpSpidCie\\';
-	$base_dir = WPSPID_PLUGIN_DIR . 'includes/';
+	$prefix = 'AuthSpidCie\\';
+	$base_dir = AUTHSPIDCIE_PLUGIN_DIR . 'includes/';
 
 	$len = strlen( $prefix );
 	if ( strncmp( $prefix, $class, $len ) !== 0 ) {
@@ -47,7 +47,7 @@ spl_autoload_register( function ( $class ) {
 /**
  * Check requirements.
  */
-function wpspid_check_requirements() {
+function authspidcie_check_requirements() {
 	$errors = array();
 
 	if ( version_compare( PHP_VERSION, '8.0.0', '<' ) ) {
@@ -56,17 +56,17 @@ function wpspid_check_requirements() {
 	}
 
 	// Estensioni e funzioni OpenSSL (anche quelle disattivate dall'hosting con disable_functions).
-	return array_merge( $errors, \WpSpidCie\Support\Requirements::check() );
+	return array_merge( $errors, \AuthSpidCie\Support\Requirements::check() );
 }
 
 /**
  * Activation hook.
  */
 register_activation_hook( __FILE__, function() {
-	$errors = wpspid_check_requirements();
+	$errors = authspidcie_check_requirements();
 	if ( empty( $errors ) ) {
 		// Verifica pratica: prova davvero a generare chiavi e certificati (SPID e CIE).
-		$probe  = \WpSpidCie\Support\Requirements::probe( true );
+		$probe  = \AuthSpidCie\Support\Requirements::probe( true );
 		$errors = $probe['errors'];
 	}
 	if ( ! empty( $errors ) ) {
@@ -79,25 +79,25 @@ register_activation_hook( __FILE__, function() {
 	}
 
 	// Initialize rewrite rules if needed in the future.
-	// WpSpidCie\Http\Router::flush_rules();
+	// AuthSpidCie\Http\Router::flush_rules();
 } );
 
 /**
  * Initialize the plugin.
  */
-require_once WPSPID_PLUGIN_DIR . 'includes/Api.php';
+require_once AUTHSPIDCIE_PLUGIN_DIR . 'includes/Api.php';
 
 add_action( 'plugins_loaded', function() {
 	// Bundled translations (it_IT); loaded before any message is built.
 	load_plugin_textdomain( 'auth-spid-cie', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' ); // phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- ships it_IT for installs outside wordpress.org
 
-	if ( ! empty( wpspid_check_requirements() ) ) {
+	if ( ! empty( authspidcie_check_requirements() ) ) {
 		add_action( 'admin_notices', function() {
-			$errors = wpspid_check_requirements();
+			$errors = authspidcie_check_requirements();
 			echo '<div class="error"><p>' . implode( '</p><p>', array_map( 'esc_html', $errors ) ) . '</p></div>';
 		} );
 		return;
 	}
 
-	WpSpidCie\Plugin::get_instance();
+	AuthSpidCie\Plugin::get_instance();
 } );

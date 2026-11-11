@@ -1,14 +1,14 @@
 <?php
-namespace WpSpidCie\Support;
+namespace AuthSpidCie\Support;
 
-use WpSpidCie\Settings\OptionsManager;
+use AuthSpidCie\Settings\OptionsManager;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
- * Central read access to plugin configuration (option `wpspid_options`, merged with defaults).
+ * Central read access to plugin configuration (option `authspidcie_options`, merged with defaults).
  */
 class Config {
 
@@ -37,15 +37,15 @@ class Config {
 	/** entityID: configured value, or the metadata URL as a last resort. */
 	public static function entity_id( $service = 'spid' ) {
 		$eid = trim( (string) self::get( 'entity_id', '' ) );
-		return '' !== $eid ? $eid : home_url( '/?wpspid=metadata&service=' . $service );
+		return '' !== $eid ? $eid : home_url( '/?authspidcie=metadata&service=' . $service );
 	}
 
 	public static function acs_url() {
-		return home_url( '/?wpspid=acs' );
+		return home_url( '/?authspidcie=acs' );
 	}
 
 	public static function slo_url() {
-		return home_url( '/?wpspid=slo' );
+		return home_url( '/?authspidcie=slo' );
 	}
 
 	public static function acs_index() {

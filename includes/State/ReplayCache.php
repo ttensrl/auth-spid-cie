@@ -1,5 +1,5 @@
 <?php
-namespace WpSpidCie\State;
+namespace AuthSpidCie\State;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -18,7 +18,7 @@ class ReplayCache {
 	 * @return bool True if first time seen, false if it is a replay.
 	 */
 	public static function mark( $id, $valid_until ) {
-		$key = 'wpspid_seen_' . md5( $id );
+		$key = 'authspidcie_seen_' . md5( $id );
 		if ( false !== get_transient( $key ) ) {
 			return false;
 		}

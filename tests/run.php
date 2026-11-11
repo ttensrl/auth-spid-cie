@@ -5,11 +5,11 @@
  */
 require __DIR__ . '/bootstrap.php';
 
-use WpSpidCie\Saml\ResponseValidator;
-use WpSpidCie\Saml\ValidationException;
-use WpSpidCie\Xml\Signer;
-use WpSpidCie\Xml\SignatureVerifier;
-use WpSpidCie\Xml\XmlSecurity;
+use AuthSpidCie\Saml\ResponseValidator;
+use AuthSpidCie\Saml\ValidationException;
+use AuthSpidCie\Xml\Signer;
+use AuthSpidCie\Xml\SignatureVerifier;
+use AuthSpidCie\Xml\XmlSecurity;
 
 $GLOBALS['pass'] = 0;
 $GLOBALS['fail'] = 0;
@@ -48,8 +48,8 @@ function make_keypair() {
 
 const SP    = 'https://sp.example.it';
 const IDP   = 'https://idp.example.it';
-const ACS   = 'https://sp.example.it/?wpspid=acs';
-const REQID = 'wpspid_abc123';
+const ACS   = 'https://sp.example.it/?authspidcie=acs';
+const REQID = 'authspidcie_abc123';
 
 /**
  * Build a Response XML string (unsigned).

@@ -1,8 +1,8 @@
 <?php
-namespace WpSpidCie\Saml;
+namespace AuthSpidCie\Saml;
 
-use WpSpidCie\Cert\Storage;
-use WpSpidCie\Xml\XmlSecurity;
+use AuthSpidCie\Cert\Storage;
+use AuthSpidCie\Xml\XmlSecurity;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -89,7 +89,7 @@ class MetadataSnapshot {
 
 	/** @return array|null {sha256, saved_at, note, entity_id, xml} */
 	public static function get( $service ) {
-		\WpSpidCie\Cert\Migrator::maybe_run();
+		\AuthSpidCie\Cert\Migrator::maybe_run();
 		$r = Storage::get( self::name( $service ) );
 		if ( ! $r || empty( $r['xml'] ) || ! is_array( $r['meta'] ?? null ) || empty( $r['meta']['sha256'] ) ) {
 			return null;

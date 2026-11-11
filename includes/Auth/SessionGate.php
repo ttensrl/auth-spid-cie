@@ -1,5 +1,5 @@
 <?php
-namespace WpSpidCie\Auth;
+namespace AuthSpidCie\Auth;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -18,14 +18,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class SessionGate {
 
-	const COOKIE = 'wpspid_sid';
-	const PREFIX = 'wpspid_sess_';
+	const COOKIE = 'authspidcie_sid';
+	const PREFIX = 'authspidcie_sess_';
 
 	/** @var array|null|false Per-request cache: array = loaded session, false = none, null = not read yet. */
 	private static $loaded = null;
 
 	private static function lifetime() {
-		return max( 60, (int) apply_filters( 'wpspid_session_lifetime', 2 * HOUR_IN_SECONDS ) );
+		return max( 60, (int) apply_filters( 'authspidcie_session_lifetime', 2 * HOUR_IN_SECONDS ) );
 	}
 
 	private static function sid_from_cookie() {

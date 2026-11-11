@@ -1,6 +1,6 @@
 <?php
 // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- i messaggi delle eccezioni non vengono stampati direttamente: chi li mostra li esegue con esc_html().
-namespace WpSpidCie\Cert;
+namespace AuthSpidCie\Cert;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -23,7 +23,7 @@ class CertificateManager {
 	}
 
 	/**
-	 * Salva chiave (cifrata se WPSPID_SECRET e' definita) e certificato, poi li rilegge e verifica.
+	 * Salva chiave (cifrata se AUTHSPIDCIE_SECRET e' definita) e certificato, poi li rilegge e verifica.
 	 *
 	 * @throws \Exception Se non si riesce a salvare o la verifica fallisce (in tal caso il record viene tolto).
 	 */
@@ -132,7 +132,7 @@ class CertificateManager {
 		return self::get_private_key( $type );
 	}
 
-	/** Salva di nuovo la chiave (cifrandola se ora c'e' WPSPID_SECRET). @throws \Exception */
+	/** Salva di nuovo la chiave (cifrandola se ora c'e' AUTHSPIDCIE_SECRET). @throws \Exception */
 	public static function reseal( $type = 'spid' ) {
 		$cert = self::get_certificate( $type );
 		$key  = self::get_private_key( $type );
@@ -157,7 +157,7 @@ class CertificateManager {
 	 * @throws \Exception
 	 */
 	public static function generate( $type = 'spid', array $subject = array(), $days = 730 ) {
-		\WpSpidCie\Support\Requirements::assert_can_generate();
+		\AuthSpidCie\Support\Requirements::assert_can_generate();
 
 		list( $key_out, $cert_out ) = self::build_material( $type, $subject, $days, 3072 );
 		self::store( $type, $key_out, $cert_out );
@@ -185,7 +185,7 @@ class CertificateManager {
 		}
 
 		$conf = self::openssl_config( 'spid' === $type, $public );
-		$cnf  = tempnam( sys_get_temp_dir(), 'wpspid' );
+		$cnf  = tempnam( sys_get_temp_dir(), 'authspidcie' );
 		if ( false === $cnf ) {
 			throw new \Exception( 'Unable to create the temporary OpenSSL configuration file.' );
 		}

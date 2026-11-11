@@ -7,29 +7,29 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Public API functions for themes and other plugins.
  */
 
-if ( ! function_exists( 'wpspid_is_authenticated' ) ) {
-	function wpspid_is_authenticated() {
-		return \WpSpidCie\Auth\SessionGate::is_authenticated();
+if ( ! function_exists( 'authspidcie_is_authenticated' ) ) {
+	function authspidcie_is_authenticated() {
+		return \AuthSpidCie\Auth\SessionGate::is_authenticated();
 	}
 }
 
-if ( ! function_exists( 'wpspid_get_attributes' ) ) {
-	function wpspid_get_attributes() {
-		return \WpSpidCie\Auth\SessionGate::attributes();
+if ( ! function_exists( 'authspidcie_get_attributes' ) ) {
+	function authspidcie_get_attributes() {
+		return \AuthSpidCie\Auth\SessionGate::attributes();
 	}
 }
 
-if ( ! function_exists( 'wpspid_get_attribute' ) ) {
-	function wpspid_get_attribute( $name ) {
-		$attrs = wpspid_get_attributes();
+if ( ! function_exists( 'authspidcie_get_attribute' ) ) {
+	function authspidcie_get_attribute( $name ) {
+		$attrs = authspidcie_get_attributes();
 		return isset( $attrs[ $name ] ) ? $attrs[ $name ] : '';
 	}
 }
 
-if ( ! function_exists( 'wpspid_login_url' ) ) {
-	function wpspid_login_url( $idp_entity_id, $level = 2, $return_to = '' ) {
+if ( ! function_exists( 'authspidcie_login_url' ) ) {
+	function authspidcie_login_url( $idp_entity_id, $level = 2, $return_to = '' ) {
 		$args = array(
-			'wpspid' => 'login',
+			'authspidcie' => 'login',
 			'idp'    => $idp_entity_id,
 			'level'  => max( 1, min( 3, (int) $level ) ),
 		);
@@ -40,11 +40,11 @@ if ( ! function_exists( 'wpspid_login_url' ) ) {
 	}
 }
 
-if ( ! function_exists( 'wpspid_logout_url' ) ) {
-	function wpspid_logout_url( $return_to = '' ) {
+if ( ! function_exists( 'authspidcie_logout_url' ) ) {
+	function authspidcie_logout_url( $return_to = '' ) {
 		$args = array(
-			'wpspid'   => 'slo',
-			'_wpnonce' => wp_create_nonce( 'wpspid_logout' ),
+			'authspidcie'   => 'slo',
+			'_wpnonce' => wp_create_nonce( 'authspidcie_logout' ),
 		);
 		if ( ! empty( $return_to ) ) {
 			$args['returnTo'] = rawurlencode( $return_to );

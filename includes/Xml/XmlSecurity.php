@@ -1,6 +1,6 @@
 <?php
 // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- i messaggi delle eccezioni non vengono stampati direttamente: chi li mostra li esegue con esc_html().
-namespace WpSpidCie\Xml;
+namespace AuthSpidCie\Xml;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

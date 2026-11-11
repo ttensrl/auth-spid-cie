@@ -1,19 +1,19 @@
 <?php
-namespace WpSpidCie\Ui;
+namespace AuthSpidCie\Ui;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
- * [spid_button], [cie_button], [wpspid_login]. Attributi: return (URL di ritorno), level (1-3).
+ * [spid_button], [cie_button], [authspidcie_login]. Attributi: return (URL di ritorno), level (1-3).
  */
 class Shortcodes {
 
 	public static function register() {
 		add_shortcode( 'spid_button', array( __CLASS__, 'spid' ) );
 		add_shortcode( 'cie_button', array( __CLASS__, 'cie' ) );
-		add_shortcode( 'wpspid_login', array( __CLASS__, 'login' ) );
+		add_shortcode( 'authspidcie_login', array( __CLASS__, 'login' ) );
 	}
 
 	private static function args( $atts, $tag ) {
@@ -34,6 +34,6 @@ class Shortcodes {
 	}
 
 	public static function login( $atts = array() ) {
-		return Buttons::page( array( 'return' => self::args( $atts, 'wpspid_login' )['return'] ) );
+		return Buttons::page( array( 'return' => self::args( $atts, 'authspidcie_login' )['return'] ) );
 	}
 }

@@ -1,0 +1,51 @@
+/*
+ * Pulsanti SPID/CIE. Eredita i colori del tema: --authspidcie-color (esplicito), poi --asl-link (tema ASL),
+ * poi --bs-primary (Bootstrap Italia), poi il blu AgID.
+ */
+.authspidcie, .authspidcie-page {
+	--authspidcie-bg: var(--authspidcie-color, var(--asl-link, var(--bs-primary, #0066cc)));
+	--authspidcie-bg-hover: var(--authspidcie-color-hover, var(--asl-link-hover, color-mix(in srgb, var(--authspidcie-bg) 80%, #000)));
+	--authspidcie-text: #fff;
+	font-family: inherit;
+}
+.authspidcie { margin: 0 0 1rem; max-width: 26rem; }
+.authspidcie__btn {
+	display: flex; align-items: center; justify-content: center; gap: .75rem;
+	min-height: 3.25rem; padding: .6rem 1.25rem; box-sizing: border-box; width: 100%;
+	background: var(--authspidcie-bg); color: var(--authspidcie-text); border: 2px solid var(--authspidcie-bg); border-radius: 4px;
+	font-size: 1.0625rem; font-weight: 700; line-height: 1.2; text-decoration: none; cursor: pointer; list-style: none;
+}
+.authspidcie__btn::-webkit-details-marker { display: none; }
+.authspidcie__btn:hover, .authspidcie__btn:focus-visible { background: var(--authspidcie-bg-hover); border-color: var(--authspidcie-bg-hover); color: var(--authspidcie-text); text-decoration: none; }
+.authspidcie__btn:focus-visible { outline: 3px solid #ffbf47; outline-offset: 2px; }
+.authspidcie__btn--off, .authspidcie__btn--off:hover { background: #6c757d; border-color: #6c757d; cursor: not-allowed; opacity: .8; }
+.authspidcie__btn--ghost { background: transparent; color: var(--authspidcie-bg); }
+.authspidcie__btn--ghost:hover, .authspidcie__btn--ghost:focus-visible { background: var(--authspidcie-bg); color: var(--authspidcie-text); }
+.authspidcie__logo { display: block; height: 1.75rem; width: auto; }
+.authspidcie__menu[open] > .authspidcie__btn { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.authspidcie__panel { border: 2px solid var(--authspidcie-bg); border-top: 0; padding: 1rem 1.25rem; background: #fff; color: #1d2b3a; }
+.authspidcie__lead { margin: 0 0 .5rem; font-weight: 600; }
+.authspidcie__idps { list-style: none; margin: 0 0 .75rem; padding: 0; }
+.authspidcie__idps li { border-bottom: 1px solid #e3e7ec; }
+.authspidcie__idps li:last-child { border-bottom: 0; }
+.authspidcie__idps a, .authspidcie__idp-off { display: block; padding: .6rem .25rem; color: var(--authspidcie-bg); font-weight: 600; text-decoration: none; }
+.authspidcie__idps a:hover, .authspidcie__idps a:focus-visible { background: color-mix(in srgb, var(--authspidcie-bg) 8%, #fff); text-decoration: underline; }
+/* Con i loghi: griglia di riquadri, nome nell'alt. */
+.authspidcie__idps:has(.authspidcie__idp-logo) { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+.authspidcie__idps:has(.authspidcie__idp-logo) li { border: 1px solid #d5dbe1; border-radius: 4px; }
+.authspidcie__idps:has(.authspidcie__idp-logo) a { display: flex; align-items: center; justify-content: center; min-height: 3.5rem; padding: .5rem .75rem; }
+.authspidcie__idp-logo { display: block; max-width: 100%; height: 1.75rem; width: auto; object-fit: contain; }
+.authspidcie__idp-off { color: #6c757d; font-weight: 400; }
+.authspidcie__help { margin: 0; font-size: .875rem; }
+.authspidcie__help a { color: var(--authspidcie-bg); }
+.authspidcie__note { margin: .5rem 0 0; font-size: .875rem; color: #55616e; }
+.authspidcie--user { padding: 1rem 1.25rem; border: 2px solid var(--authspidcie-bg); border-radius: 4px; }
+.authspidcie--user p { margin: 0 0 .75rem; }
+
+/* Pagina di accesso dedicata */
+.authspidcie-page { padding: 2rem 1rem 3rem; }
+.authspidcie-page__box { max-width: 30rem; margin: 0 auto; }
+.authspidcie-page__title { margin: 0 0 .75rem; font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 700; text-align: center; color: var(--authspidcie-bg); }
+.authspidcie-page__intro { margin: 0 0 1.5rem; text-align: center; color: #44505c; }
+.authspidcie-page .authspidcie { max-width: none; }
+@media (prefers-reduced-motion: no-preference) { .authspidcie__btn { transition: background .15s, border-color .15s; } }

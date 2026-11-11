@@ -11,12 +11,12 @@ const HOUR_IN_SECONDS   = 3600;
 $GLOBALS['opts']   = array();
 $GLOBALS['trans']  = array();
 $GLOBALS['redirect'] = null;
-$GLOBALS['tmp']    = sys_get_temp_dir() . '/wpspid-test-' . bin2hex( random_bytes( 4 ) );
+$GLOBALS['tmp']    = sys_get_temp_dir() . '/authspidcie-test-' . bin2hex( random_bytes( 4 ) );
 mkdir( $GLOBALS['tmp'], 0777, true );
 // Mai la cartella data/ reale del plugin: la migrazione cerca nelle cartelle temporanee dei test.
 $GLOBALS['mig_data']   = $GLOBALS['tmp'] . '/old-data/';
 $GLOBALS['mig_legacy'] = $GLOBALS['tmp'] . '/old-uploads/';
-$GLOBALS['filters']['wpspid_migration_dirs'] = function () { return array( 'data' => $GLOBALS['mig_data'], 'legacy' => $GLOBALS['mig_legacy'] ); };
+$GLOBALS['filters']['authspidcie_migration_dirs'] = function () { return array( 'data' => $GLOBALS['mig_data'], 'legacy' => $GLOBALS['mig_legacy'] ); };
 
 function get_option( $k, $d = false ) { return array_key_exists( $k, $GLOBALS['opts'] ) ? $GLOBALS['opts'][ $k ] : $d; }
 function home_url( $p = '' ) { return 'https://sp.example.it' . $p; }
@@ -50,16 +50,16 @@ function apply_filters( $tag, $value, ...$rest ) { return isset( $GLOBALS['filte
 function wp_enqueue_style( $h ) { $GLOBALS['enqueued'][] = $h; }
 function get_template_directory() { return $GLOBALS['tmp'] . '/theme'; }
 function get_template_directory_uri() { return 'https://sp.example.it/wp-content/themes/wp-pa-theme'; }
-define( 'WPSPID_PLUGIN_URL', 'https://sp.example.it/wp-content/plugins/auth-spid-cie/' );
+define( 'AUTHSPIDCIE_PLUGIN_URL', 'https://sp.example.it/wp-content/plugins/auth-spid-cie/' );
 
-use WpSpidCie\Cert\CertificateManager;
-use WpSpidCie\Saml\AuthnRequestBuilder;
-use WpSpidCie\Saml\Bindings;
-use WpSpidCie\Idp\Registry;
-use WpSpidCie\State\ReplayCache;
-use WpSpidCie\State\RequestStore;
-use WpSpidCie\Xml\SignatureVerifier;
-use WpSpidCie\Xml\XmlSecurity;
+use AuthSpidCie\Cert\CertificateManager;
+use AuthSpidCie\Saml\AuthnRequestBuilder;
+use AuthSpidCie\Saml\Bindings;
+use AuthSpidCie\Idp\Registry;
+use AuthSpidCie\State\ReplayCache;
+use AuthSpidCie\State\RequestStore;
+use AuthSpidCie\Xml\SignatureVerifier;
+use AuthSpidCie\Xml\XmlSecurity;
 
 $pass = 0; $fail = 0;
 function ok( $c, $n ) { global $pass, $fail; if ( $c ) { $pass++; echo "  ok   $n\n"; } else { $fail++; echo "  FAIL $n\n"; } }
@@ -92,14 +92,14 @@ echo "== AuthnRequest\n";
 $cert = CertificateManager::get_certificate( 'spid' );
 $req  = AuthnRequestBuilder::build( 'https://idp.example.it', 'https://idp.example.it/sso', 99, 'spid', true );
 ok( 3 === $req['level'], 'level 99 clamped to 3' );
-ok( strpos( $req['xml'], 'wpspid=metadata&amp;service=spid' ) !== false, 'entityID with & is escaped in the Issuer (regression)' );
+ok( strpos( $req['xml'], 'authspidcie=metadata&amp;service=spid' ) !== false, 'entityID with & is escaped in the Issuer (regression)' );
 $doc = XmlSecurity::load_xml( $req['xml'] );
 ok( strpos( $req['xml'], 'SpidL3' ) !== false && strpos( $req['xml'], 'SpidL99' ) === false, 'class ref is SpidL3' );
 $err = null;
 try { SignatureVerifier::verify_element( $doc, $doc->documentElement, array( $cert ) ); } catch ( \Exception $e ) { $err = $e->getMessage(); }
 ok( null === $err, 'embedded XML signature verifies with SP certificate' . ( $err ? " ($err)" : '' ) );
 ok( 'https://idp.example.it' === $doc->documentElement->getAttribute( 'Destination' ), 'Destination = IdP entityID by default' );
-$GLOBALS['opts']['wpspid_options'] = array( 'destination_mode' => 'sso_url' );
+$GLOBALS['opts']['authspidcie_options'] = array( 'destination_mode' => 'sso_url' );
 $req2 = AuthnRequestBuilder::build( 'https://idp.example.it', 'https://idp.example.it/sso', 2, 'spid', false );
 $doc2 = XmlSecurity::load_xml( $req2['xml'] );
 ok( 'https://idp.example.it/sso' === $doc2->documentElement->getAttribute( 'Destination' ), 'Destination = SSO URL when configured' );
@@ -117,9 +117,9 @@ ok( 1 === openssl_verify( $signed, $sig, $pub, OPENSSL_ALGO_SHA256 ), 'query-str
 ok( strpos( $signed, 'SigAlg=' ) !== false, 'SigAlg is part of the signed string' );
 
 echo "== State\n";
-RequestStore::set( 'wpspid_x', array( 'a' => 1 ) );
-ok( array( 'a' => 1 ) === RequestStore::consume( 'wpspid_x' ), 'pending request consumed once' );
-ok( false === RequestStore::consume( 'wpspid_x' ), 'second consume fails' );
+RequestStore::set( 'authspidcie_x', array( 'a' => 1 ) );
+ok( array( 'a' => 1 ) === RequestStore::consume( 'authspidcie_x' ), 'pending request consumed once' );
+ok( false === RequestStore::consume( 'authspidcie_x' ), 'second consume fails' );
 ok( true === ReplayCache::mark( 'a:1', time() + 300 ), 'first assertion id accepted' );
 ok( false === ReplayCache::mark( 'a:1', time() + 300 ), 'replayed assertion id refused' );
 
@@ -140,12 +140,12 @@ $base = array(
 	'fpa_comune' => 'Roma', 'fpa_provincia' => 'RM', 'fpa_org_name' => 'Ente Srl', 'fpa_email' => 'f@example.it', 'fpa_phone' => '+390612345678',
 );
 foreach ( array( 'public' => 'IPACode', 'private' => 'VATNumber' ) as $sector => $code_type ) {
-	$GLOBALS['opts']['wpspid_options'] = array_merge( $base, array( 'sp_type' => $sector, 'org_code_type' => $code_type, 'org_code' => 'public' === $sector ? 'c_h501' : '01234567890' ) );
+	$GLOBALS['opts']['authspidcie_options'] = array_merge( $base, array( 'sp_type' => $sector, 'org_code_type' => $code_type, 'org_code' => 'public' === $sector ? 'c_h501' : '01234567890' ) );
 	foreach ( array( 'spid', 'cie' ) as $svc ) {
 		if ( ! CertificateManager::exists( $svc ) ) {
 			CertificateManager::generate( $svc, array( 'org_name' => 'E', 'common_name' => 'E', 'uri' => 'https://sp.example.it', 'org_identifier' => 'PA:IT-x', 'country' => 'IT', 'locality' => 'Roma', 'public' => true ), 30 );
 		}
-		$md   = \WpSpidCie\Saml\MetadataBuilder::generate( $svc );
+		$md   = \AuthSpidCie\Saml\MetadataBuilder::generate( $svc );
 		$mdoc = null;
 		try { $mdoc = XmlSecurity::load_xml( $md ); } catch ( \Exception $e ) { echo '    ' . $e->getMessage() . "\n"; }
 		ok( null !== $mdoc, "$sector/$svc metadata is well-formed XML (name with &)" );
@@ -163,7 +163,7 @@ foreach ( array( 'public' => 'IPACode', 'private' => 'VATNumber' ) as $sector =>
 $GLOBALS['opts'] = array();
 
 echo "== Options (sanitize)\n";
-use WpSpidCie\Settings\OptionsManager;
+use AuthSpidCie\Settings\OptionsManager;
 $san = OptionsManager::sanitize( array( '_form' => 1, 'entity_id' => 'http://insecure.example', 'cie_level' => 9, 'acs_index' => -3, 'sp_type' => 'private', 'org_code' => 'IT 0123-4567890!', 'fpa_provincia' => 'rm1', 'attributes' => array( 'name', 'bogus' ), 'test_idp_urls' => "https://localhost:8443/metadata.xml\nhttp://nope\nhttps://localhost:8443/metadata.xml" ) );
 ok( '' === $san['entity_id'], 'non-https entityID rejected' );
 ok( 3 === $san['cie_level'] && 0 === $san['acs_index'], 'levels clamped' );
@@ -171,7 +171,7 @@ ok( 'IT0123-4567890' === $san['org_code'] && 'RM' === $san['fpa_provincia'], 'co
 ok( in_array( 'fiscalNumber', $san['attributes'], true ) && in_array( 'name', $san['attributes'], true ) && ! in_array( 'bogus', $san['attributes'], true ), 'attributes whitelisted, fiscalNumber forced' );
 ok( array( 'https://localhost:8443/metadata.xml' ) === $san['test_idp_urls'], 'test IdP URLs: https only, de-duplicated' );
 ok( false === $san['enabled'] && false === $san['production'], 'unchecked checkboxes become false on form submit' );
-$GLOBALS['opts']['wpspid_options'] = array( 'enabled' => true, 'org_name' => 'Keep me' );
+$GLOBALS['opts']['authspidcie_options'] = array( 'enabled' => true, 'org_name' => 'Keep me' );
 $partial = OptionsManager::sanitize( array( 'cie_level' => 1 ) );
 ok( true === $partial['enabled'] && 'Keep me' === $partial['org_name'], 'programmatic partial update keeps stored values' );
 $GLOBALS['opts'] = array();
@@ -180,13 +180,13 @@ ok( in_array( 'entityID', $miss, true ) && in_array( 'IPA code', $miss, true ), 
 ok( array() === OptionsManager::missing_for_metadata( $base + array( 'sp_type' => 'public' ), 'spid' ), 'complete public data -> nothing missing' );
 
 echo "== Test IdPs\n";
-$GLOBALS['opts']['wpspid_options'] = array( 'production' => true, 'test_demo' => true, 'test_idp_urls' => array( 'https://localhost:8443/metadata.xml' ) );
-ok( array() === \WpSpidCie\Idp\TestIdps::get_all(), 'no test IdP is ever offered in production' );
+$GLOBALS['opts']['authspidcie_options'] = array( 'production' => true, 'test_demo' => true, 'test_idp_urls' => array( 'https://localhost:8443/metadata.xml' ) );
+ok( array() === \AuthSpidCie\Idp\TestIdps::get_all(), 'no test IdP is ever offered in production' );
 $GLOBALS['opts'] = array();
 
 
 echo "== Requirements (OpenSSL probe)\n";
-use WpSpidCie\Support\Requirements;
+use AuthSpidCie\Support\Requirements;
 $base_subject = array( 'org_name' => 'Ente Test', 'common_name' => 'Ente Test', 'uri' => 'https://sp.example.it', 'org_identifier' => 'PA:IT-c_h501', 'country' => 'IT', 'locality' => 'Roma', 'public' => true );
 ok( array() === Requirements::check(), 'this environment satisfies the requirements' );
 $r = Requirements::probe( true );
@@ -211,15 +211,15 @@ ok( false === CertificateManager::exists( 'blocked' ), 'no key/cert files are cr
 ok( true === Requirements::probe( true )['ok'], 'probe recovers once the environment is fine again' );
 
 echo "== Storage nel database (niente file)\n";
-use WpSpidCie\Cert\KeyVault;
-use WpSpidCie\Cert\Migrator;
-use WpSpidCie\Cert\Storage;
-use WpSpidCie\Saml\MetadataSnapshot as Snap;
-ok( isset( $GLOBALS['site_opts']['wpspid_cert_spid'] ) && ! isset( $GLOBALS['opts']['wpspid_cert_spid'] ), 'the certificate is stored with the (network) site option API, never in a regular autoloaded option' );
-$rec = $GLOBALS['site_opts']['wpspid_cert_spid'];
-ok( 0 === strpos( $rec['key'], 'wpspid:1:plain:' ) && false !== strpos( $rec['key'], 'PRIVATE KEY' ), 'without WPSPID_SECRET the key blob is marked "plain", version 1' );
+use AuthSpidCie\Cert\KeyVault;
+use AuthSpidCie\Cert\Migrator;
+use AuthSpidCie\Cert\Storage;
+use AuthSpidCie\Saml\MetadataSnapshot as Snap;
+ok( isset( $GLOBALS['site_opts']['authspidcie_cert_spid'] ) && ! isset( $GLOBALS['opts']['authspidcie_cert_spid'] ), 'the certificate is stored with the (network) site option API, never in a regular autoloaded option' );
+$rec = $GLOBALS['site_opts']['authspidcie_cert_spid'];
+ok( 0 === strpos( $rec['key'], 'authspidcie:1:plain:' ) && false !== strpos( $rec['key'], 'PRIVATE KEY' ), 'without AUTHSPIDCIE_SECRET the key blob is marked "plain", version 1' );
 ok( KeyVault::S_PLAIN === CertificateManager::key_state( 'spid' )['status'] && false !== openssl_pkey_get_private( CertificateManager::get_private_key( 'spid' ) ), 'plain key: state plain, readable' );
-ok( ! is_dir( WPSPID_PLUGIN_DIR . 'data/' ) || array() === array_diff( scandir( WPSPID_PLUGIN_DIR . 'data/' ), array( '.', '..', '.gitignore', '.htaccess', 'index.php' ) ), 'generating a certificate writes nothing into the plugin folder' );
+ok( ! is_dir( AUTHSPIDCIE_PLUGIN_DIR . 'data/' ) || array() === array_diff( scandir( AUTHSPIDCIE_PLUGIN_DIR . 'data/' ), array( '.', '..', '.gitignore', '.htaccess', 'index.php' ) ), 'generating a certificate writes nothing into the plugin folder' );
 $kp = openssl_pkey_new( array( 'private_key_bits' => 2048 ) );
 openssl_pkey_export( $kp, $imp_key );
 $csr  = openssl_csr_new( array( 'commonName' => 'imp' ), $kp );
@@ -228,19 +228,19 @@ CertificateManager::import( 'imported', $imp_key, $imp_cert );
 ok( trim( $imp_key ) === trim( CertificateManager::get_private_key( 'imported' ) ) && trim( $imp_cert ) === trim( CertificateManager::get_certificate( 'imported' ) ), 'imported key and certificate round-trip unchanged' );
 ok( Storage::get( 'cert_a/../b' ) === null && isset( $GLOBALS['site_opts'] ) , 'storage names are sanitised' );
 
-echo "== Cifratura facoltativa (libsodium, WPSPID_SECRET)\n";
+echo "== Cifratura facoltativa (libsodium, AUTHSPIDCIE_SECRET)\n";
 if ( ! KeyVault::sodium_available() ) {
 	echo "  SKIP sodium not available in this PHP build\n";
 } else {
 	KeyVault::$test_secret = 'segreto-di-prova-' . str_repeat( 'x', 20 );
 	$blob = KeyVault::seal( $imp_key );
-	ok( 0 === strpos( $blob, 'wpspid:1:enc:' ) && false === strpos( $blob, 'PRIVATE KEY' ), 'with the constant the blob is marked "enc" v1 and holds no PEM text' );
-	ok( 1 === preg_match( '/^wpspid:1:enc:[a-f0-9]{16}:[A-Za-z0-9+\/=]+$/', $blob ), 'blob = marker + 8-byte key fingerprint + base64(nonce.ciphertext)' );
+	ok( 0 === strpos( $blob, 'authspidcie:1:enc:' ) && false === strpos( $blob, 'PRIVATE KEY' ), 'with the constant the blob is marked "enc" v1 and holds no PEM text' );
+	ok( 1 === preg_match( '/^authspidcie:1:enc:[a-f0-9]{16}:[A-Za-z0-9+\/=]+$/', $blob ), 'blob = marker + 8-byte key fingerprint + base64(nonce.ciphertext)' );
 	ok( KeyVault::seal( $imp_key ) !== $blob, 'a fresh random nonce is used every time' );
 	$o = KeyVault::open( $blob );
 	ok( KeyVault::S_OK === $o['status'] && $imp_key === $o['key'], 'round trip: the same constant decrypts to the exact original key' );
 	CertificateManager::import( 'enc', $imp_key, $imp_cert );
-	ok( 0 === strpos( $GLOBALS['site_opts']['wpspid_cert_enc']['key'], 'wpspid:1:enc:' ) && trim( $imp_key ) === trim( CertificateManager::get_private_key( 'enc' ) ), 'import with the constant stores the key encrypted and reads it back' );
+	ok( 0 === strpos( $GLOBALS['site_opts']['authspidcie_cert_enc']['key'], 'authspidcie:1:enc:' ) && trim( $imp_key ) === trim( CertificateManager::get_private_key( 'enc' ) ), 'import with the constant stores the key encrypted and reads it back' );
 	ok( KeyVault::S_OK === CertificateManager::key_state( 'enc' )['status'], 'state ok for an encrypted, readable key' );
 	// Costante cambiata.
 	KeyVault::$test_secret = 'un-altro-segreto-completamente-diverso';
@@ -251,24 +251,24 @@ if ( ! KeyVault::sodium_available() ) {
 	// Costante assente.
 	KeyVault::$test_secret = '';
 	ok( KeyVault::S_NO_SECRET === KeyVault::open( $blob )['status'] && false === CertificateManager::get_private_key( 'enc' ), 'constant missing: no_secret, no key returned' );
-	ok( false !== strpos( KeyVault::message( KeyVault::S_NO_SECRET ), 'WPSPID_SECRET' ) && false !== strpos( KeyVault::message( KeyVault::S_NO_SECRET ), 'registered again' ), 'the message tells to restore the constant or regenerate and re-register' );
+	ok( false !== strpos( KeyVault::message( KeyVault::S_NO_SECRET ), 'AUTHSPIDCIE_SECRET' ) && false !== strpos( KeyVault::message( KeyVault::S_NO_SECRET ), 'registered again' ), 'the message tells to restore the constant or regenerate and re-register' );
 	// Dato alterato.
 	KeyVault::$test_secret = 'segreto-di-prova-' . str_repeat( 'x', 20 );
 	$tampered = substr( $blob, 0, -6 ) . ( 'AAAAAA' === substr( $blob, -6 ) ? 'BBBBBB' : 'AAAAAA' );
 	ok( KeyVault::S_CORRUPT === KeyVault::open( $tampered )['status'], 'altered ciphertext is detected (corrupt), never returned as a key' );
-	ok( KeyVault::S_CORRUPT === KeyVault::open( 'wpspid:9:whatever' )['status'] && KeyVault::S_CORRUPT === KeyVault::open( '-----BEGIN PRIVATE KEY-----' )['status'], 'unknown format/version is corrupt' );
+	ok( KeyVault::S_CORRUPT === KeyVault::open( 'authspidcie:9:whatever' )['status'] && KeyVault::S_CORRUPT === KeyVault::open( '-----BEGIN PRIVATE KEY-----' )['status'], 'unknown format/version is corrupt' );
 	// Chiave in chiaro e costante definita dopo.
-	$o = KeyVault::open( 'wpspid:1:plain:' . $imp_key );
+	$o = KeyVault::open( 'authspidcie:1:plain:' . $imp_key );
 	ok( KeyVault::S_PLAIN_PENDING === $o['status'] && $imp_key === $o['key'], 'plain key + constant defined later: readable, flagged plain_pending' );
 	CertificateManager::reseal( 'imported' );
-	ok( 0 === strpos( $GLOBALS['site_opts']['wpspid_cert_imported']['key'], 'wpspid:1:enc:' ) && KeyVault::S_OK === CertificateManager::key_state( 'imported' )['status'] && trim( $imp_key ) === trim( CertificateManager::get_private_key( 'imported' ) ), 'reseal() encrypts a plain key in place' );
+	ok( 0 === strpos( $GLOBALS['site_opts']['authspidcie_cert_imported']['key'], 'authspidcie:1:enc:' ) && KeyVault::S_OK === CertificateManager::key_state( 'imported' )['status'] && trim( $imp_key ) === trim( CertificateManager::get_private_key( 'imported' ) ), 'reseal() encrypts a plain key in place' );
 	// Costante tolta dopo la cifratura.
 	KeyVault::$test_secret = null;
 	ok( KeyVault::S_NO_SECRET === CertificateManager::key_state( 'imported' )['status'], 'constant removed after encrypting: reported, key not guessed' );
 	// Sodium mancante.
 	KeyVault::$test_secret    = 'segreto-di-prova-' . str_repeat( 'x', 20 );
 	KeyVault::$test_no_sodium = true;
-	ok( KeyVault::S_NO_SODIUM === KeyVault::open( $blob )['status'] && KeyVault::S_NO_SODIUM === KeyVault::open( 'wpspid:1:plain:' . $imp_key )['status'], 'constant defined but libsodium missing: blocked with its own status' );
+	ok( KeyVault::S_NO_SODIUM === KeyVault::open( $blob )['status'] && KeyVault::S_NO_SODIUM === KeyVault::open( 'authspidcie:1:plain:' . $imp_key )['status'], 'constant defined but libsodium missing: blocked with its own status' );
 	throws( 'saving is refused when the constant is defined and libsodium is missing', function () use ( $imp_key, $imp_cert ) { CertificateManager::import( 'nosodium', $imp_key, $imp_cert ); } );
 	ok( false === CertificateManager::exists( 'nosodium' ), 'a refused save leaves nothing behind' );
 	KeyVault::$test_no_sodium = false;
@@ -336,7 +336,7 @@ if ( KeyVault::sodium_available() ) {
 	KeyVault::$test_no_sodium = false;
 	Migrator::reset();
 	$res = Migrator::run();
-	ok( in_array( 'spid', $res['migrated'], true ) && 0 === strpos( $GLOBALS['site_opts']['wpspid_cert_spid']['key'], 'wpspid:1:enc:' ) && ! is_dir( $GLOBALS['mig_data'] ), 'with the constant defined the migration stores the key encrypted' );
+	ok( in_array( 'spid', $res['migrated'], true ) && 0 === strpos( $GLOBALS['site_opts']['authspidcie_cert_spid']['key'], 'authspidcie:1:enc:' ) && ! is_dir( $GLOBALS['mig_data'] ), 'with the constant defined the migration stores the key encrypted' );
 	ok( trim( $imp_key ) === trim( CertificateManager::get_private_key( 'spid' ) ), 'and it reads back correctly' );
 	KeyVault::$test_secret = null;
 	CertificateManager::delete( 'spid' );
@@ -360,24 +360,24 @@ ok( array() === Migrator::issues(), 'issues are cleared once a run finds nothing
 CertificateManager::delete( 'imported' );
 
 echo "== Disinstallazione\n";
-use WpSpidCie\Support\Uninstaller;
+use AuthSpidCie\Support\Uninstaller;
 $GLOBALS['wpdb'] = new class { public $options = 'wp_options'; public $queries = array(); public function query( $q ) { $this->queries[] = $q; return 1; } };
 function delete_option_t( $k ) {}
-$GLOBALS['opts']['wpspid_options'] = array( 'org_name' => 'X' );
+$GLOBALS['opts']['authspidcie_options'] = array( 'org_name' => 'X' );
 CertificateManager::import( 'spid', $imp_key, $imp_cert );
 Snap::store_raw( 'spid', '<EntityDescriptor/>', array( 'sha256' => str_repeat( 'b', 64 ) ) );
 Uninstaller::run();
-ok( ! empty( $GLOBALS['site_opts']['wpspid_cert_spid'] ) && null !== Snap::get( 'spid' ) && ! empty( $GLOBALS['opts']['wpspid_options'] ), 'default: certificate, key, registered metadata and organization settings are KEPT' );
-ok( 1 === count( $GLOBALS['wpdb']->queries ) && false !== strpos( $GLOBALS['wpdb']->queries[0], 'transient' ) && false !== strpos( $GLOBALS['wpdb']->queries[0], 'wpspid' ), 'default: temporary data (sessions, pending requests, caches) is deleted' );
-define( 'WPSPID_REMOVE_DATA_ON_UNINSTALL', true );
+ok( ! empty( $GLOBALS['site_opts']['authspidcie_cert_spid'] ) && null !== Snap::get( 'spid' ) && ! empty( $GLOBALS['opts']['authspidcie_options'] ), 'default: certificate, key, registered metadata and organization settings are KEPT' );
+ok( 1 === count( $GLOBALS['wpdb']->queries ) && false !== strpos( $GLOBALS['wpdb']->queries[0], 'transient' ) && false !== strpos( $GLOBALS['wpdb']->queries[0], 'authspidcie' ), 'default: temporary data (sessions, pending requests, caches) is deleted' );
+define( 'AUTHSPIDCIE_REMOVE_DATA_ON_UNINSTALL', true );
 Uninstaller::run();
-ok( ! isset( $GLOBALS['site_opts']['wpspid_cert_spid'] ) && null === Snap::get( 'spid' ) && ! isset( $GLOBALS['opts']['wpspid_options'] ), 'WPSPID_REMOVE_DATA_ON_UNINSTALL=true: everything is deleted' );
+ok( ! isset( $GLOBALS['site_opts']['authspidcie_cert_spid'] ) && null === Snap::get( 'spid' ) && ! isset( $GLOBALS['opts']['authspidcie_options'] ), 'AUTHSPIDCIE_REMOVE_DATA_ON_UNINSTALL=true: everything is deleted' );
 CertificateManager::delete( 'spid' );
 $GLOBALS['site_opts'] = $saved_site_opts;
-$GLOBALS['opts']['wpspid_options'] = array();
+$GLOBALS['opts']['authspidcie_options'] = array();
 
 echo "== Sessione (cookie + transient, senza sessioni PHP)\n";
-use WpSpidCie\Auth\SessionGate;
+use AuthSpidCie\Auth\SessionGate;
 if ( ! defined( 'YEAR_IN_SECONDS' ) ) { define( 'YEAR_IN_SECONDS', 31536000 ); }
 if ( ! function_exists( 'is_ssl' ) ) { function is_ssl() { return false; } }
 if ( ! function_exists( 'sanitize_text_field' ) ) { function sanitize_text_field( $s ) { return trim( strip_tags( $s ) ); } }
@@ -412,9 +412,9 @@ SessionGate::reset_cache();
 ok( false === SessionGate::is_authenticated() && array() === $GLOBALS['trans'] && ! isset( $_COOKIE[ SessionGate::COOKIE ] ), 'logout removes the session on the server and the cookie' );
 
 echo "== Metadata snapshot (what was registered)\n";
-use WpSpidCie\Saml\MetadataSnapshot;
-use WpSpidCie\Saml\MetadataBuilder;
-$GLOBALS['opts']['wpspid_options'] = array_merge( $base, array( 'sp_type' => 'public', 'org_code_type' => 'IPACode', 'org_code' => 'c_h501' ) );
+use AuthSpidCie\Saml\MetadataSnapshot;
+use AuthSpidCie\Saml\MetadataBuilder;
+$GLOBALS['opts']['authspidcie_options'] = array_merge( $base, array( 'sp_type' => 'public', 'org_code_type' => 'IPACode', 'org_code' => 'c_h501' ) );
 $m1 = MetadataBuilder::generate( 'spid' );
 $m2 = MetadataBuilder::generate( 'spid' );
 ok( $m1 !== $m2, 'two generations differ byte by byte (random ID, new signature)' );
@@ -423,11 +423,11 @@ ok( 'none' === MetadataSnapshot::status( 'spid', $m1 )['state'], 'no snapshot ye
 MetadataSnapshot::save( 'spid', $m1, 'registrato su AgID 2026-11' );
 $st = MetadataSnapshot::status( 'spid', $m2 );
 ok( 'same' === $st['state'] && 'registrato su AgID 2026-11' === $st['note'], 'regenerated metadata equals the registered one' );
-ok( $m1 === MetadataSnapshot::get( 'spid' )['xml'] && isset( $GLOBALS['site_opts']['wpspid_registered_spid'] ), 'registered XML is stored in the database' );
+ok( $m1 === MetadataSnapshot::get( 'spid' )['xml'] && isset( $GLOBALS['site_opts']['authspidcie_registered_spid'] ), 'registered XML is stored in the database' );
 ok( 'none' === MetadataSnapshot::status( 'cie', MetadataBuilder::generate( 'cie' ) )['state'], 'snapshot is per service (cie still none)' );
-$GLOBALS['opts']['wpspid_options']['org_name'] = 'Altro Ente Srl';
+$GLOBALS['opts']['authspidcie_options']['org_name'] = 'Altro Ente Srl';
 ok( 'changed' === MetadataSnapshot::status( 'spid', MetadataBuilder::generate( 'spid' ) )['state'], 'a changed organisation name is detected as a difference' );
-$GLOBALS['opts']['wpspid_options'] = array_merge( $base, array( 'sp_type' => 'public', 'org_code_type' => 'IPACode', 'org_code' => 'c_h501', 'contact_email' => 'altra@example.it' ) );
+$GLOBALS['opts']['authspidcie_options'] = array_merge( $base, array( 'sp_type' => 'public', 'org_code_type' => 'IPACode', 'org_code' => 'c_h501', 'contact_email' => 'altra@example.it' ) );
 ok( 'changed' === MetadataSnapshot::status( 'spid', MetadataBuilder::generate( 'spid' ) )['state'], 'a changed contact is detected too' );
 throws( 'snapshot refuses something that is not metadata XML', function () {
 	MetadataSnapshot::save( 'spid', '<not-metadata/>', '' );
@@ -439,13 +439,13 @@ $GLOBALS['opts'] = array();
 
 
 echo "== UI: pulsanti SPID/CIE e scelta dell'IdP\n";
-use WpSpidCie\Ui\Buttons;
-$GLOBALS['opts']['wpspid_options'] = array( 'enabled' => 1, 'spid_enabled' => 1, 'cie_enabled' => 1, 'cie_level' => 2, 'test_demo' => 0 );
-$n_spid = count( \WpSpidCie\Idp\IdpRepository::get_spid_idps() );
+use AuthSpidCie\Ui\Buttons;
+$GLOBALS['opts']['authspidcie_options'] = array( 'enabled' => 1, 'spid_enabled' => 1, 'cie_enabled' => 1, 'cie_level' => 2, 'test_demo' => 0 );
+$n_spid = count( \AuthSpidCie\Idp\IdpRepository::get_spid_idps() );
 $h = Buttons::spid_button();
 ok( false !== strpos( $h, 'Log in with SPID' ), 'SPID button says "Log in with SPID"' );
 ok( $n_spid === substr_count( $h, '<li' ), "all $n_spid SPID identity providers are listed" );
-ok( false !== strpos( $h, 'wpspid=login' ) && false !== strpos( $h, 'level=2' ) && false !== strpos( $h, rawurlencode( 'https://posteid.poste.it' ) ), 'each IdP links to the login route with level 2 and its (encoded) entityID' );
+ok( false !== strpos( $h, 'authspidcie=login' ) && false !== strpos( $h, 'level=2' ) && false !== strpos( $h, rawurlencode( 'https://posteid.poste.it' ) ), 'each IdP links to the login route with level 2 and its (encoded) entityID' );
 ok( false !== strpos( $h, '<details' ) && false === strpos( $h, '<details open' ), 'list is collapsed by default (native details/summary, no JavaScript)' );
 foreach ( array( 'https://www.spid.gov.it"', 'https://www.spid.gov.it/richiedi-spid', 'https://www.spid.gov.it/serve-aiuto' ) as $link ) {
 	ok( false !== strpos( $h, $link ), "help link present: $link" );
@@ -459,37 +459,37 @@ ok( false !== strpos( Buttons::spid_button( array( 'open' => true ) ), '<details
 ok( false !== strpos( Buttons::spid_button( array( 'return' => 'https://sp.example.it/area/' ) ), 'returnTo=' . rawurlencode( 'https://sp.example.it/area/' ) ), 'returnTo is carried over' );
 $c = Buttons::cie_button();
 ok( false !== strpos( $c, 'Log in with CIE' ) && false !== strpos( $c, 'aria-disabled="true"' ) && false === strpos( $c, 'href=' ), 'CIE button is disabled (no link) when the CIE IdP has no certificates yet' );
-set_transient( 'wpspid_cie_test', array( 'entity_id' => 'https://cie.example/idp', 'name' => 'CIE (test)', 'display_name' => 'CIE', 'logo' => '', 'type' => 'cie', 'certs' => array( 'CERT' ), 'sso' => array( array( 'binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST', 'location' => 'https://cie.example/sso' ) ), 'slo' => array() ) );
+set_transient( 'authspidcie_cie_test', array( 'entity_id' => 'https://cie.example/idp', 'name' => 'CIE (test)', 'display_name' => 'CIE', 'logo' => '', 'type' => 'cie', 'certs' => array( 'CERT' ), 'sso' => array( array( 'binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST', 'location' => 'https://cie.example/sso' ) ), 'slo' => array() ) );
 $c = Buttons::cie_button();
 ok( false !== strpos( $c, 'Log in with CIE' ) && false !== strpos( $c, 'level=2' ) && false !== strpos( $c, rawurlencode( 'https://cie.example/idp' ) ) && false === strpos( $c, 'aria-disabled' ), 'CIE button links to the login route with the configured level once the IdP is usable' );
 ok( '' === Buttons::logo( 'cie' ), 'no CIE logo is bundled (cie-graphics has no declared licence)' );
 ok( false !== strpos( Buttons::logo( 'spid' ), 'assets/img/' ), 'the SPID logo (CC0) is bundled with the plugin' );
-$GLOBALS['filters']['wpspid_logo_url'] = function ( $url, $service ) { return 'cie' === $service ? 'https://theme.example/cie.svg' : $url; };
+$GLOBALS['filters']['authspidcie_logo_url'] = function ( $url, $service ) { return 'cie' === $service ? 'https://theme.example/cie.svg' : $url; };
 ok( false !== strpos( Buttons::cie_button(), 'https://theme.example/cie.svg' ), 'the theme can supply the CIE logo through a filter' );
 $GLOBALS['filters'] = array();
-$u = Buttons::user_box( array( 'name' => '<script>alert(1)</script>', 'familyName' => 'Rossi' ), 'https://sp.example.it/?wpspid=slo&a=b' );
+$u = Buttons::user_box( array( 'name' => '<script>alert(1)</script>', 'familyName' => 'Rossi' ), 'https://sp.example.it/?authspidcie=slo&a=b' );
 ok( false === strpos( $u, '<script>' ) && false !== strpos( $u, '&lt;script&gt;' ), 'user name is escaped (no markup injection from SAML attributes)' );
-ok( false !== strpos( $u, 'wpspid=slo&amp;a=b' ), 'logout link is escaped' );
-ok( '' === Buttons::user_box( array(), 'https://sp.example.it/?wpspid=slo' ), 'no attributes -> no "logged in" box' );
-$GLOBALS['opts']['wpspid_options']['enabled'] = 0;
+ok( false !== strpos( $u, 'authspidcie=slo&amp;a=b' ), 'logout link is escaped' );
+ok( '' === Buttons::user_box( array(), 'https://sp.example.it/?authspidcie=slo' ), 'no attributes -> no "logged in" box' );
+$GLOBALS['opts']['authspidcie_options']['enabled'] = 0;
 ok( '' === Buttons::spid_button() && '' === Buttons::cie_button() && '' === Buttons::page(), 'nothing is rendered while the plugin is disabled' );
-$GLOBALS['opts']['wpspid_options'] = array( 'enabled' => 1, 'spid_enabled' => 0, 'cie_enabled' => 1 );
+$GLOBALS['opts']['authspidcie_options'] = array( 'enabled' => 1, 'spid_enabled' => 0, 'cie_enabled' => 1 );
 ok( '' === Buttons::spid_button() && '' !== Buttons::cie_button(), 'SPID can be switched off independently of CIE' );
-$GLOBALS['opts']['wpspid_options'] = array( 'enabled' => 1, 'spid_enabled' => 1, 'cie_enabled' => 1, 'test_demo' => 0 );
+$GLOBALS['opts']['authspidcie_options'] = array( 'enabled' => 1, 'spid_enabled' => 1, 'cie_enabled' => 1, 'test_demo' => 0 );
 $pg = Buttons::page();
 ok( false !== strpos( $pg, '<h1' ) && false !== strpos( $pg, '<details open' ) && false !== strpos( $pg, 'Log in with CIE' ), 'login page: title, open SPID list and CIE button' );
-ok( in_array( 'wpspid-ui', $GLOBALS['enqueued'], true ), 'the stylesheet is enqueued only when something is rendered' );
+ok( in_array( 'authspidcie-ui', $GLOBALS['enqueued'], true ), 'the stylesheet is enqueued only when something is rendered' );
 $GLOBALS['opts'] = array();
 
 
 echo "== Integrazione con il tema (filtro dci_area_personale, logo CIE)\n";
-use WpSpidCie\Integrations\Theme as ThemeIntegration;
-$GLOBALS['opts']['wpspid_options'] = array( 'enabled' => 0 );
+use AuthSpidCie\Integrations\Theme as ThemeIntegration;
+$GLOBALS['opts']['authspidcie_options'] = array( 'enabled' => 0 );
 $area = array( 'label' => 'Area personale', 'url' => 'https://sp.example.it/wp-login.php' );
 ok( $area === ThemeIntegration::area_personale( $area ), 'plugin disabled: the theme keeps its own Area personale link' );
-$GLOBALS['opts']['wpspid_options'] = array( 'enabled' => 1 );
+$GLOBALS['opts']['authspidcie_options'] = array( 'enabled' => 1 );
 $a2 = ThemeIntegration::area_personale( $area );
-ok( 'https://sp.example.it/?wpspid=choose' === $a2['url'] && 'Area personale' === $a2['label'], 'enabled: Area personale points to the SPID/CIE login page, label unchanged when logged out' );
+ok( 'https://sp.example.it/?authspidcie=choose' === $a2['url'] && 'Area personale' === $a2['label'], 'enabled: Area personale points to the SPID/CIE login page, label unchanged when logged out' );
 ok( 'Mario Rossi' === ThemeIntegration::label( array( 'name' => 'Mario', 'familyName' => 'Rossi' ), 'Area personale' ), 'logged in: the label becomes the citizen\'s name' );
 ok( 'Area personale' === ThemeIntegration::label( array(), 'Area personale' ) && 'Area personale' === ThemeIntegration::label( array( 'fiscalNumber' => 'X' ), 'Area personale' ), 'no name attribute: label unchanged' );
 ok( 'https://x/y.svg' === ThemeIntegration::logo( 'https://x/y.svg', 'spid' ), 'only the CIE logo is supplied, the others are untouched' );

@@ -1,6 +1,6 @@
 <?php
 // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- i messaggi delle eccezioni non vengono stampati direttamente: chi li mostra li esegue con esc_html().
-namespace WpSpidCie\Xml;
+namespace AuthSpidCie\Xml;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -90,7 +90,7 @@ class Signer {
 			$root->insertBefore( $signature, $root->firstChild );
 		}
 
-		$digest_value = \WpSpidCie\Xml\XmlSecurity::text_element( $doc, 'http://www.w3.org/2000/09/xmldsig#', 'ds:DigestValue', $digest_value_str );
+		$digest_value = \AuthSpidCie\Xml\XmlSecurity::text_element( $doc, 'http://www.w3.org/2000/09/xmldsig#', 'ds:DigestValue', $digest_value_str );
 		$reference->appendChild( $digest_value );
 
 		// 5. Calculate SignatureValue.
@@ -100,7 +100,7 @@ class Signer {
 			throw new \Exception( 'Failed to sign: ' . openssl_error_string() );
 		}
 
-		$signature_value = \WpSpidCie\Xml\XmlSecurity::text_element( $doc, 'http://www.w3.org/2000/09/xmldsig#', 'ds:SignatureValue', base64_encode( $signature_res ) );
+		$signature_value = \AuthSpidCie\Xml\XmlSecurity::text_element( $doc, 'http://www.w3.org/2000/09/xmldsig#', 'ds:SignatureValue', base64_encode( $signature_res ) );
 		$signature->appendChild( $signature_value );
 
 		// 6. Add KeyInfo with certificate.
@@ -112,7 +112,7 @@ class Signer {
 
 		// Clean certificate from PEM headers and whitespace.
 		$cert_clean = preg_replace( '/\-+BEGIN CERTIFICATE\-+|\-+END CERTIFICATE\-+|\s+/', '', $certificate );
-		$x509_certificate = \WpSpidCie\Xml\XmlSecurity::text_element( $doc, 'http://www.w3.org/2000/09/xmldsig#', 'ds:X509Certificate', $cert_clean );
+		$x509_certificate = \AuthSpidCie\Xml\XmlSecurity::text_element( $doc, 'http://www.w3.org/2000/09/xmldsig#', 'ds:X509Certificate', $cert_clean );
 		$x509_data->appendChild( $x509_certificate );
 	}
 }

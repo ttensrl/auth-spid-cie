@@ -1,9 +1,9 @@
 <?php
-namespace WpSpidCie\Saml;
+namespace AuthSpidCie\Saml;
 
-use WpSpidCie\Cert\CertificateManager;
-use WpSpidCie\Support\Config;
-use WpSpidCie\Xml\Signer;
+use AuthSpidCie\Cert\CertificateManager;
+use AuthSpidCie\Support\Config;
+use AuthSpidCie\Xml\Signer;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -36,7 +36,7 @@ class AuthnRequestBuilder {
 		$private_key = CertificateManager::private_key_or_fail( $service ); // Spiega perche' la chiave non e' leggibile.
 
 		$entity_id     = Config::entity_id( $service );
-		$id            = 'wpspid_' . bin2hex( random_bytes( 16 ) );
+		$id            = 'authspidcie_' . bin2hex( random_bytes( 16 ) );
 		$issue_instant = gmdate( 'Y-m-d\TH:i:s\Z' );
 		// spid-php puts the IdP entityID in Destination; configurable, to be confirmed with the validator.
 		$destination   = 'sso_url' === Config::destination_mode() ? $sso_url : $idp_entity_id;
@@ -56,7 +56,7 @@ class AuthnRequestBuilder {
 		$request->setAttribute( 'AttributeConsumingServiceIndex', (string) Config::acs_index() );
 		$doc->appendChild( $request );
 
-		$issuer = \WpSpidCie\Xml\XmlSecurity::text_element( $doc, 'urn:oasis:names:tc:SAML:2.0:assertion', 'saml:Issuer', $entity_id );
+		$issuer = \AuthSpidCie\Xml\XmlSecurity::text_element( $doc, 'urn:oasis:names:tc:SAML:2.0:assertion', 'saml:Issuer', $entity_id );
 		$issuer->setAttribute( 'Format', 'urn:oasis:names:tc:SAML:2.0:nameid-format:entity' );
 		$issuer->setAttribute( 'NameQualifier', $entity_id );
 		$request->appendChild( $issuer );
@@ -70,11 +70,11 @@ class AuthnRequestBuilder {
 		$request->appendChild( $ctx );
 
 		// SPID and CIE both use the SpidL{n} class refs (as spid-php does).
-		$ref = \WpSpidCie\Xml\XmlSecurity::text_element( $doc, 'urn:oasis:names:tc:SAML:2.0:assertion', 'saml:AuthnContextClassRef', 'https://www.spid.gov.it/SpidL' . $level );
+		$ref = \AuthSpidCie\Xml\XmlSecurity::text_element( $doc, 'urn:oasis:names:tc:SAML:2.0:assertion', 'saml:AuthnContextClassRef', 'https://www.spid.gov.it/SpidL' . $level );
 		$ctx->appendChild( $ref );
 
 		// Work on a re-parsed copy so that signing canonicalizes the same tree a verifier will parse.
-		$doc     = \WpSpidCie\Xml\XmlSecurity::load_xml( $doc->saveXML() );
+		$doc     = \AuthSpidCie\Xml\XmlSecurity::load_xml( $doc->saveXML() );
 		$request = $doc->documentElement;
 		if ( $embed_signature ) {
 			Signer::sign( $request, $private_key, $cert );

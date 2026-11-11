@@ -1,16 +1,16 @@
 <?php
 // phpcs:disable WordPress.Security.NonceVerification.Missing -- il nonce e' verificato con check_admin_referer() all'inizio di ogni handler (post_action).
-namespace WpSpidCie\Settings;
+namespace AuthSpidCie\Settings;
 
-use WpSpidCie\Cert\CertificateManager;
-use WpSpidCie\Cert\KeyVault;
-use WpSpidCie\Idp\CieMetadata;
-use WpSpidCie\Idp\Registry;
-use WpSpidCie\Idp\TestIdps;
-use WpSpidCie\Saml\MetadataBuilder;
-use WpSpidCie\Saml\MetadataSnapshot;
-use WpSpidCie\Support\Config;
-use WpSpidCie\Support\Requirements;
+use AuthSpidCie\Cert\CertificateManager;
+use AuthSpidCie\Cert\KeyVault;
+use AuthSpidCie\Idp\CieMetadata;
+use AuthSpidCie\Idp\Registry;
+use AuthSpidCie\Idp\TestIdps;
+use AuthSpidCie\Saml\MetadataBuilder;
+use AuthSpidCie\Saml\MetadataSnapshot;
+use AuthSpidCie\Support\Config;
+use AuthSpidCie\Support\Requirements;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -22,9 +22,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class AdminPage {
 
-	const SLUG  = 'wpspid-settings';
-	const GROUP = 'wpspid_options_group';
-	const NONCE = 'wpspid_admin';
+	const SLUG  = 'authspidcie-settings';
+	const GROUP = 'authspidcie_options_group';
+	const NONCE = 'authspidcie_admin';
 
 	private static $instance = null;
 
@@ -38,14 +38,14 @@ class AdminPage {
 	private function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_action( 'admin_init', array( $this, 'register' ) );
-		add_action( 'admin_post_wpspid_cert_generate', array( $this, 'post_cert_generate' ) );
-		add_action( 'admin_post_wpspid_cert_import', array( $this, 'post_cert_import' ) );
-		add_action( 'admin_post_wpspid_cert_download', array( $this, 'post_cert_download' ) );
-		add_action( 'admin_post_wpspid_refresh', array( $this, 'post_refresh' ) );
-		add_action( 'admin_post_wpspid_probe', array( $this, 'post_probe' ) );
-		add_action( 'admin_post_wpspid_encrypt_key', array( $this, 'post_encrypt_key' ) );
-		add_action( 'admin_post_wpspid_meta_snapshot', array( $this, 'post_meta_snapshot' ) );
-		add_action( 'admin_post_wpspid_meta_download', array( $this, 'post_meta_download' ) );
+		add_action( 'admin_post_authspidcie_cert_generate', array( $this, 'post_cert_generate' ) );
+		add_action( 'admin_post_authspidcie_cert_import', array( $this, 'post_cert_import' ) );
+		add_action( 'admin_post_authspidcie_cert_download', array( $this, 'post_cert_download' ) );
+		add_action( 'admin_post_authspidcie_refresh', array( $this, 'post_refresh' ) );
+		add_action( 'admin_post_authspidcie_probe', array( $this, 'post_probe' ) );
+		add_action( 'admin_post_authspidcie_encrypt_key', array( $this, 'post_encrypt_key' ) );
+		add_action( 'admin_post_authspidcie_meta_snapshot', array( $this, 'post_meta_snapshot' ) );
+		add_action( 'admin_post_authspidcie_meta_download', array( $this, 'post_meta_download' ) );
 	}
 
 	public function add_menu() {
@@ -76,7 +76,7 @@ class AdminPage {
 	}
 
 	private function back( $type, $message ) {
-		set_transient( 'wpspid_notice_' . get_current_user_id(), array( $type, $message ), 60 );
+		set_transient( 'authspidcie_notice_' . get_current_user_id(), array( $type, $message ), 60 );
 		wp_safe_redirect( admin_url( 'options-general.php?page=' . self::SLUG ) );
 		exit;
 	}
@@ -120,7 +120,7 @@ class AdminPage {
 				'public'         => Config::is_public(),
 			), 730 );
 		} catch ( \Exception $e ) {
-			\WpSpidCie\Support\Log::write( '[auth-spid-cie] cert generate: ' . $e->getMessage() );
+			\AuthSpidCie\Support\Log::write( '[auth-spid-cie] cert generate: ' . $e->getMessage() );
 			$this->back( 'error', sprintf( /* translators: %s: technical error message. */ __( 'Certificate generation failed: %s', 'auth-spid-cie' ), $e->getMessage() ) );
 		}
 		$this->back( 'success', sprintf( /* translators: %s: SPID or CIE. */ __( '%s certificate generated (valid for 730 days).', 'auth-spid-cie' ), strtoupper( $service ) ) );
@@ -235,11 +235,11 @@ class AdminPage {
 
 	private function text_row( $label, $name, $value, $args = array() ) {
 		$args = array_merge( array( 'type' => 'text', 'class' => 'regular-text', 'help' => '', 'placeholder' => '', 'required' => false ), $args );
-		echo '<tr><th scope="row"><label for="wpspid_' . esc_attr( $name ) . '">' . esc_html( $label ) . ( $args['required'] ? ' <span style="color:#b32d2e">*</span>' : '' ) . '</label></th><td>';
+		echo '<tr><th scope="row"><label for="authspidcie_' . esc_attr( $name ) . '">' . esc_html( $label ) . ( $args['required'] ? ' <span style="color:#b32d2e">*</span>' : '' ) . '</label></th><td>';
 		// .small-text di WordPress e' largo 50px: tronca CAP (5 cifre) e codice ISTAT (6 cifre).
 		$style = false !== strpos( $args['class'], 'small-text' ) ? ' style="width:8em"' : '';
 		printf(
-			'<input type="%s" id="wpspid_%s" name="%s[%s]" value="%s" class="%s" placeholder="%s"' . $style . ' />', // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $style e' una costante interna
+			'<input type="%s" id="authspidcie_%s" name="%s[%s]" value="%s" class="%s" placeholder="%s"' . $style . ' />', // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $style e' una costante interna
 			esc_attr( $args['type'] ),
 			esc_attr( $name ),
 			esc_attr( OptionsManager::OPTION ),
@@ -259,7 +259,7 @@ class AdminPage {
 	}
 
 	private function select_row( $label, $name, $value, array $choices, $help = '' ) {
-		echo '<tr><th scope="row"><label for="wpspid_' . esc_attr( $name ) . '">' . esc_html( $label ) . '</label></th><td><select id="wpspid_' . esc_attr( $name ) . '" name="' . esc_attr( OptionsManager::OPTION ) . '[' . esc_attr( $name ) . ']">';
+		echo '<tr><th scope="row"><label for="authspidcie_' . esc_attr( $name ) . '">' . esc_html( $label ) . '</label></th><td><select id="authspidcie_' . esc_attr( $name ) . '" name="' . esc_attr( OptionsManager::OPTION ) . '[' . esc_attr( $name ) . ']">';
 		foreach ( $choices as $k => $text ) {
 			echo '<option value="' . esc_attr( $k ) . '" ' . selected( (string) $value, (string) $k, false ) . '>' . esc_html( $text ) . '</option>';
 		}
@@ -276,9 +276,9 @@ class AdminPage {
 		}
 		$c      = Config::options();
 		$name   = OptionsManager::OPTION;
-		$notice = get_transient( 'wpspid_notice_' . get_current_user_id() );
+		$notice = get_transient( 'authspidcie_notice_' . get_current_user_id() );
 		if ( $notice ) {
-			delete_transient( 'wpspid_notice_' . get_current_user_id() );
+			delete_transient( 'authspidcie_notice_' . get_current_user_id() );
 		}
 		$private = 'private' === $c['sp_type'];
 
@@ -376,8 +376,8 @@ class AdminPage {
 		$this->check_row( __( 'SPID Demo IdP', 'auth-spid-cie' ), 'test_demo', $c['test_demo'], __( 'demo.spid.gov.it (only when not in production)', 'auth-spid-cie' ) );
 		$this->check_row( __( 'SPID Demo (Validator mode)', 'auth-spid-cie' ), 'test_demo_validator', $c['test_demo_validator'], 'demo.spid.gov.it/validator' );
 		$this->check_row( 'AgID Validator', 'test_validator', $c['test_validator'], 'validator.spid.gov.it' );
-		echo '<tr><th scope="row"><label for="wpspid_test_idp_urls">' . esc_html__( 'Custom test IdPs', 'auth-spid-cie' ) . '</label></th><td><textarea id="wpspid_test_idp_urls" name="' . esc_attr( $name ) . '[test_idp_urls]" rows="3" class="large-text code" placeholder="https://localhost:8443/metadata.xml">' . esc_textarea( implode( "\n", (array) $c['test_idp_urls'] ) ) . '</textarea><p class="description">' . esc_html__( 'One metadata URL (https) per line, max 5. Example: a local spid-saml-check.', 'auth-spid-cie' ) . '</p></td></tr>';
-		echo '<tr><th scope="row"><label for="wpspid_test_idp_xml">' . esc_html__( 'Test IdP metadata (XML)', 'auth-spid-cie' ) . '</label></th><td><textarea id="wpspid_test_idp_xml" name="' . esc_attr( $name ) . '[test_idp_xml]" rows="4" class="large-text code" placeholder="&lt;EntityDescriptor ...&gt;">' . esc_textarea( (string) $c['test_idp_xml'] ) . '</textarea><p class="description">' . esc_html__( 'Alternative to the URL: paste here the XML metadata of a test IdP (spid-saml-check, spid-sp-test).', 'auth-spid-cie' ) . '</p></td></tr>';
+		echo '<tr><th scope="row"><label for="authspidcie_test_idp_urls">' . esc_html__( 'Custom test IdPs', 'auth-spid-cie' ) . '</label></th><td><textarea id="authspidcie_test_idp_urls" name="' . esc_attr( $name ) . '[test_idp_urls]" rows="3" class="large-text code" placeholder="https://localhost:8443/metadata.xml">' . esc_textarea( implode( "\n", (array) $c['test_idp_urls'] ) ) . '</textarea><p class="description">' . esc_html__( 'One metadata URL (https) per line, max 5. Example: a local spid-saml-check.', 'auth-spid-cie' ) . '</p></td></tr>';
+		echo '<tr><th scope="row"><label for="authspidcie_test_idp_xml">' . esc_html__( 'Test IdP metadata (XML)', 'auth-spid-cie' ) . '</label></th><td><textarea id="authspidcie_test_idp_xml" name="' . esc_attr( $name ) . '[test_idp_xml]" rows="4" class="large-text code" placeholder="&lt;EntityDescriptor ...&gt;">' . esc_textarea( (string) $c['test_idp_xml'] ) . '</textarea><p class="description">' . esc_html__( 'Alternative to the URL: paste here the XML metadata of a test IdP (spid-saml-check, spid-sp-test).', 'auth-spid-cie' ) . '</p></td></tr>';
 		$this->check_row( __( 'Unverified TLS (testing only)', 'auth-spid-cie' ), 'test_insecure_tls', $c['test_insecure_tls'], __( 'Accepts self-signed certificates from local test IdPs. Never in production.', 'auth-spid-cie' ) );
 		echo '</table>';
 
@@ -402,12 +402,12 @@ class AdminPage {
 			}
 			echo '</ul>';
 		}
-		echo '<br /><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline"><input type="hidden" name="action" value="wpspid_probe" />';
+		echo '<br /><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline"><input type="hidden" name="action" value="authspidcie_probe" />';
 		wp_nonce_field( self::NONCE );
 		submit_button( __( 'Check again', 'auth-spid-cie' ), 'link', 'submit', false );
 		echo '</form></td></tr>';
 		echo '<tr><td><strong>' . esc_html__( 'Data', 'auth-spid-cie' ) . '</strong></td><td>' . wp_kses(
-			__( 'Keys, certificates and registered metadata are stored in the <strong>WordPress database</strong> (not in files), so updating or reinstalling the plugin does not lose them. They are kept when the plugin is deleted unless <code>WPSPID_REMOVE_DATA_ON_UNINSTALL</code> is set. Database backups contain the private key: to store it encrypted, define <code>WPSPID_SECRET</code> in wp-config.php.', 'auth-spid-cie' ),
+			__( 'Keys, certificates and registered metadata are stored in the <strong>WordPress database</strong> (not in files), so updating or reinstalling the plugin does not lose them. They are kept when the plugin is deleted unless <code>AUTHSPIDCIE_REMOVE_DATA_ON_UNINSTALL</code> is set. Database backups contain the private key: to store it encrypted, define <code>AUTHSPIDCIE_SECRET</code> in wp-config.php.', 'auth-spid-cie' ),
 			array( 'code' => array(), 'strong' => array() )
 		) . '</td></tr>';
 		foreach ( array( 'spid' => 'SPID', 'cie' => 'CIE' ) as $service => $label ) {
@@ -417,7 +417,7 @@ class AdminPage {
 			}
 			$missing = OptionsManager::missing_for_metadata( $c, $service );
 			$info    = CertificateManager::info( $service );
-			$url     = home_url( '/?wpspid=metadata&service=' . $service );
+			$url     = home_url( '/?authspidcie=metadata&service=' . $service );
 			echo '<tr><td><strong>' . esc_html( $label ) . '</strong></td><td>';
 			if ( $missing ) {
 				echo '<span style="color:#b32d2e">&#10007; ' . esc_html__( 'Missing data:', 'auth-spid-cie' ) . '</span> ' . esc_html( implode( ', ', $missing ) ) . '<br />';
@@ -460,7 +460,7 @@ class AdminPage {
 		echo '<tr><td><strong>' . esc_html__( 'Routes', 'auth-spid-cie' ) . '</strong></td><td>ACS: <code>' . esc_html( Config::acs_url() ) . '</code><br />' . esc_html__( 'Logout:', 'auth-spid-cie' ) . ' <code>' . esc_html( Config::slo_url() ) . '</code></td></tr>';
 		echo '<tr><td><strong>' . esc_html__( 'Environment', 'auth-spid-cie' ) . '</strong></td><td>' . ( Config::is_production() ? '<strong style="color:#b32d2e">' . esc_html__( 'PRODUCTION', 'auth-spid-cie' ) . '</strong>' : esc_html__( 'Test (test IdPs are visible)', 'auth-spid-cie' ) ) . '</td></tr>';
 		echo '</tbody></table>';
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="margin-top:10px"><input type="hidden" name="action" value="wpspid_refresh" />';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="margin-top:10px"><input type="hidden" name="action" value="authspidcie_refresh" />';
 		wp_nonce_field( self::NONCE );
 		submit_button( __( 'Refresh Identity Provider list', 'auth-spid-cie' ), 'secondary', 'submit', false );
 		echo '</form></div>';
@@ -470,12 +470,12 @@ class AdminPage {
 		$state = CertificateManager::key_state( $service );
 		$st    = $state['status'];
 		if ( KeyVault::S_OK === $st ) {
-			echo '<span style="color:#00a32a">&#10003; ' . esc_html__( 'Private key stored encrypted (WPSPID_SECRET).', 'auth-spid-cie' ) . '</span><br />';
+			echo '<span style="color:#00a32a">&#10003; ' . esc_html__( 'Private key stored encrypted (AUTHSPIDCIE_SECRET).', 'auth-spid-cie' ) . '</span><br />';
 		} elseif ( KeyVault::S_PLAIN === $st ) {
-			echo '<span style="color:#996800">&#9888; ' . esc_html__( 'Private key stored in the database WITHOUT encryption: database backups contain it. To encrypt it, define WPSPID_SECRET in wp-config.php (see the documentation).', 'auth-spid-cie' ) . '</span><br />';
+			echo '<span style="color:#996800">&#9888; ' . esc_html__( 'Private key stored in the database WITHOUT encryption: database backups contain it. To encrypt it, define AUTHSPIDCIE_SECRET in wp-config.php (see the documentation).', 'auth-spid-cie' ) . '</span><br />';
 		} elseif ( KeyVault::S_PLAIN_PENDING === $st ) {
-			echo '<span style="color:#996800">&#9888; ' . esc_html__( 'WPSPID_SECRET is defined but the private key is still stored without encryption.', 'auth-spid-cie' ) . '</span> ';
-			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline"><input type="hidden" name="action" value="wpspid_encrypt_key" /><input type="hidden" name="service" value="' . esc_attr( $service ) . '" />';
+			echo '<span style="color:#996800">&#9888; ' . esc_html__( 'AUTHSPIDCIE_SECRET is defined but the private key is still stored without encryption.', 'auth-spid-cie' ) . '</span> ';
+			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline"><input type="hidden" name="action" value="authspidcie_encrypt_key" /><input type="hidden" name="service" value="' . esc_attr( $service ) . '" />';
 			wp_nonce_field( self::NONCE );
 			submit_button( __( 'Encrypt now', 'auth-spid-cie' ), 'link', 'submit', false );
 			echo '</form><br />';
@@ -491,7 +491,7 @@ class AdminPage {
 			return;
 		}
 		$dl = function ( $which ) use ( $service ) {
-			return wp_nonce_url( admin_url( 'admin-post.php?action=wpspid_meta_download&service=' . $service . '&which=' . $which ), self::NONCE );
+			return wp_nonce_url( admin_url( 'admin-post.php?action=authspidcie_meta_download&service=' . $service . '&which=' . $which ), self::NONCE );
 		};
 		echo '<div style="margin-top:8px">';
 		if ( 'none' === $status['state'] ) {
@@ -517,7 +517,7 @@ class AdminPage {
 		if ( 'none' !== $status['state'] ) {
 			echo '<a class="button" href="' . esc_url( $dl( 'registered' ) ) . '">' . esc_html__( 'Download the registered one', 'auth-spid-cie' ) . '</a> ';
 		}
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block"><input type="hidden" name="action" value="wpspid_meta_snapshot" /><input type="hidden" name="service" value="' . esc_attr( $service ) . '" />';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block"><input type="hidden" name="action" value="authspidcie_meta_snapshot" /><input type="hidden" name="service" value="' . esc_attr( $service ) . '" />';
 		wp_nonce_field( self::NONCE );
 		echo '<input type="text" name="note" placeholder="' . esc_attr__( 'Note (e.g. registered on ...)', 'auth-spid-cie' ) . '" class="regular-text" /> ';
 		submit_button( 'none' === $status['state'] ? __( 'Save as registered', 'auth-spid-cie' ) : __( 'Save the current one as registered', 'auth-spid-cie' ), 'secondary', 'submit', false );
@@ -536,10 +536,10 @@ class AdminPage {
 			echo '<div class="card" style="max-width:none"><h3 style="margin-top:0">' . esc_html( $label ) . '</h3>';
 			if ( $info ) {
 				echo '<p>' . esc_html__( 'Subject:', 'auth-spid-cie' ) . ' <code>' . esc_html( $info['subject'] ) . '</code> &middot; ' . esc_html__( 'Identifier:', 'auth-spid-cie' ) . ' <code>' . esc_html( $info['organization_identifier'] ) . '</code><br />SHA-256: <code>' . esc_html( $info['fingerprint'] ) . '</code></p>';
-				$dl = wp_nonce_url( admin_url( 'admin-post.php?action=wpspid_cert_download&service=' . $service ), self::NONCE );
+				$dl = wp_nonce_url( admin_url( 'admin-post.php?action=authspidcie_cert_download&service=' . $service ), self::NONCE );
 				echo '<p><a class="button" href="' . esc_url( $dl ) . '>' . esc_html__( 'Download certificate (.crt)', 'auth-spid-cie' ) . '</a></p>';
 			}
-			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="wpspid_cert_generate" /><input type="hidden" name="service" value="' . esc_attr( $service ) . '" />';
+			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="authspidcie_cert_generate" /><input type="hidden" name="service" value="' . esc_attr( $service ) . '" />';
 			wp_nonce_field( self::NONCE );
 			if ( $info ) {
 				echo '<label><input type="checkbox" name="confirm_replace" value="1" /> ' . esc_html__( 'I confirm: replace the existing certificate', 'auth-spid-cie' ) . '</label> ';
@@ -547,7 +547,7 @@ class AdminPage {
 			submit_button( $info ? __( 'Regenerate', 'auth-spid-cie' ) : __( 'Generate certificate', 'auth-spid-cie' ), 'primary', 'submit', false );
 			echo '</form>';
 			echo '<details style="margin-top:12px"><summary>' . esc_html__( 'Import existing key and certificate', 'auth-spid-cie' ) . '</summary>';
-			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="wpspid_cert_import" /><input type="hidden" name="service" value="' . esc_attr( $service ) . '" />';
+			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="authspidcie_cert_import" /><input type="hidden" name="service" value="' . esc_attr( $service ) . '" />';
 			wp_nonce_field( self::NONCE );
 			echo '<p><label>' . esc_html__( 'Private key (PEM)', 'auth-spid-cie' ) . '<br /><textarea name="import_key" rows="5" class="large-text code" autocomplete="off" placeholder="-----BEGIN PRIVATE KEY-----"></textarea></label></p>';
 			echo '<p><label>' . esc_html__( 'Certificate (PEM)', 'auth-spid-cie' ) . '<br /><textarea name="import_cert" rows="5" class="large-text code" placeholder="-----BEGIN CERTIFICATE-----"></textarea></label></p>';

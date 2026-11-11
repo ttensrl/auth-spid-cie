@@ -1,5 +1,5 @@
 <?php
-namespace WpSpidCie\Saml;
+namespace AuthSpidCie\Saml;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

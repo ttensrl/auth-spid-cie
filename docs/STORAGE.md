@@ -6,9 +6,9 @@ Tutto nel **database di WordPress**, non in file. Il plugin non scrive nulla nel
 
 | Opzione | Contenuto |
 |---|---|
-| `wpspid_cert_spid`, `wpspid_cert_cie` | chiave privata dell'SP (cifrata o no, vedi sotto) e certificato |
-| `wpspid_registered_spid`, `wpspid_registered_cie` | metadata registrato presso AgID/CIE + hash, data, nota |
-| `wpspid_options` | impostazioni dell'ente (ragione sociale, contatti, livelli, ...), per sito |
+| `authspidcie_cert_spid`, `authspidcie_cert_cie` | chiave privata dell'SP (cifrata o no, vedi sotto) e certificato |
+| `authspidcie_registered_spid`, `authspidcie_registered_cie` | metadata registrato presso AgID/CIE + hash, data, nota |
+| `authspidcie_options` | impostazioni dell'ente (ragione sociale, contatti, livelli, ...), per sito |
 
 Sono opzioni **di rete** (`get_site_option`/`update_site_option`): in un multisite stanno in `sitemeta` e c'è **un solo certificato per tutta la rete**, come prima; in un sito singolo WordPress le scrive in `options` con `autoload = 'no'`, quindi la chiave non viene caricata a ogni richiesta. Le pagine pubbliche non la leggono mai: serve solo per firmare AuthnRequest e metadata.
 
@@ -19,7 +19,7 @@ Conseguenza: **aggiornare, reinstallare, copiare la cartella del plugin o fare u
 Per default la chiave è salvata **in chiaro** nel database: chi ha un dump o un backup del database ha la chiave. Se questo non va bene, **cifrala** definendo in `wp-config.php` un segreto lungo e casuale:
 
 ```php
-define( 'WPSPID_SECRET', 'incolla-qui-il-valore-generato' );
+define( 'AUTHSPIDCIE_SECRET', 'incolla-qui-il-valore-generato' );
 ```
 
 Generarlo: `php -r "echo bin2hex(random_bytes(32));"`. Conservalo con le altre credenziali (gestore di password, backup separato dal database).
@@ -30,7 +30,7 @@ Generarlo: `php -r "echo bin2hex(random_bytes(32));"`. Conservalo con le altre c
 
 | Situazione | Cosa succede |
 |---|---|
-| Chiave cifrata e `WPSPID_SECRET` corretta | tutto funziona; il pannello dice "cifrata" |
+| Chiave cifrata e `AUTHSPIDCIE_SECRET` corretta | tutto funziona; il pannello dice "cifrata" |
 | Chiave in chiaro e costante **non** definita | funziona; il pannello avvisa che i backup contengono la chiave |
 | Chiave in chiaro e costante definita **dopo** | funziona; il pannello avvisa e offre **Cifra ora** (si cifra anche al prossimo salvataggio) |
 | Chiave cifrata e costante **assente** | chiave illeggibile: login e metadata di quel servizio disattivati, avviso in admin |
@@ -38,13 +38,13 @@ Generarlo: `php -r "echo bin2hex(random_bytes(32));"`. Conservalo con le altre c
 | Dato alterato o formato sconosciuto | idem, "dato danneggiato" |
 | Costante definita ma manca l'estensione `sodium` | bloccato, con il messaggio dedicato: abilita l'estensione o togli la costante |
 
-### Se perdi o cambi `WPSPID_SECRET`
+### Se perdi o cambi `AUTHSPIDCIE_SECRET`
 
-La chiave cifrata **non si può recuperare**. L'avviso in admin lo dice chiaramente: *ripristina la costante `WPSPID_SECRET` originale oppure rigenera il certificato*. Rigenerare significa che **il metadata cambia e va ri-registrato presso AgID/CIE**. Il plugin non prova mai a indovinare il segreto.
+La chiave cifrata **non si può recuperare**. L'avviso in admin lo dice chiaramente: *ripristina la costante `AUTHSPIDCIE_SECRET` originale oppure rigenera il certificato*. Rigenerare significa che **il metadata cambia e va ri-registrato presso AgID/CIE**. Il plugin non prova mai a indovinare il segreto.
 
 ### Backup del database
 
-Includono certificato e chiave. Con `WPSPID_SECRET` e il segreto fuori dal dump, il backup da solo non basta a usare la chiave. Senza, **trattali come segreti**.
+Includono certificato e chiave. Con `AUTHSPIDCIE_SECRET` e il segreto fuori dal dump, il backup da solo non basta a usare la chiave. Senza, **trattali come segreti**.
 
 ## Migrazione dalle versioni precedenti (file)
 
@@ -54,7 +54,7 @@ Le prime versioni tenevano i dati in `wp-content/plugins/auth-spid-cie/data/` (c
 2. **rilegge** e verifica che chiave e certificato corrispondano (`openssl_x509_check_private_key`) e che il metadata registrato sia identico;
 3. **solo dopo** cancella i vecchi file e la cartella vuota (anche `.htaccess`, `index.php`, `.gitignore` di protezione).
 
-Se un passo fallisce (coppia non valida, un certificato diverso già nel database, salvataggio non riuscito) **non cancella niente**: i file restano dove sono e il pannello mostra un avviso con il motivo. Si può rilanciare: è idempotente. Se `WPSPID_SECRET` è definita al momento della migrazione, la chiave entra nel database già cifrata.
+Se un passo fallisce (coppia non valida, un certificato diverso già nel database, salvataggio non riuscito) **non cancella niente**: i file restano dove sono e il pannello mostra un avviso con il motivo. Si può rilanciare: è idempotente. Se `AUTHSPIDCIE_SECRET` è definita al momento della migrazione, la chiave entra nel database già cifrata.
 
 Chi aggiorna da una versione che usava `data/`: l'aggiornamento di WordPress rimette `data/` al suo posto (lo faceva la vecchia versione) e la nuova la migra.
 
@@ -65,7 +65,7 @@ Chi aggiorna da una versione che usava `data/`: l'aggiornamento di WordPress rim
 Per default **non** cancella certificato, chiave, metadata registrato e impostazioni dell'ente: rifare la registrazione presso AgID/CIE costa giorni, e un'eliminazione per errore o una reinstallazione non deve farla perdere. Per cancellare tutto:
 
 ```php
-define( 'WPSPID_REMOVE_DATA_ON_UNINSTALL', true );
+define( 'AUTHSPIDCIE_REMOVE_DATA_ON_UNINSTALL', true );
 ```
 
 (in `wp-config.php`, prima di eliminare il plugin). In multisite vale per tutta la rete.
@@ -82,4 +82,4 @@ Cause tipiche su hosting condiviso: estensione assente, funzioni OpenSSL disatti
 
 ## Metadata registrato
 
-Il metadata si genera al volo (`?wpspid=metadata&service=spid|cie`). Dopo la registrazione presso AgID/CIE si salva da *Impostazioni → SPID/CIE → Stato* ("Salva come registrato"). Da quel momento il plugin segnala se il metadata attuale differisce da quello registrato (confronto sul metadata normalizzato: ID casuale, `validUntil` e firma non contano). Se cambia, la registrazione va ripetuta.
+Il metadata si genera al volo (`?authspidcie=metadata&service=spid|cie`). Dopo la registrazione presso AgID/CIE si salva da *Impostazioni → SPID/CIE → Stato* ("Salva come registrato"). Da quel momento il plugin segnala se il metadata attuale differisce da quello registrato (confronto sul metadata normalizzato: ID casuale, `validUntil` e firma non contano). Se cambia, la registrazione va ripetuta.

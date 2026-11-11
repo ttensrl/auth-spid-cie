@@ -1,5 +1,5 @@
 <?php
-namespace WpSpidCie\Idp;
+namespace AuthSpidCie\Idp;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -21,7 +21,7 @@ class CieMetadata {
 	const ENTITY_TEST = 'https://preproduzione.idserver.servizicie.interno.gov.it/idp/profile/SAML2/POST/SSO';
 
 	public static function get_idp( $production ) {
-		$key    = 'wpspid_cie_' . ( $production ? 'prod' : 'test' );
+		$key    = 'authspidcie_cie_' . ( $production ? 'prod' : 'test' );
 		$cached = get_transient( $key );
 		if ( is_array( $cached ) ) {
 			return $cached;
@@ -33,8 +33,8 @@ class CieMetadata {
 	}
 
 	public static function refresh() {
-		delete_transient( 'wpspid_cie_prod' );
-		delete_transient( 'wpspid_cie_test' );
+		delete_transient( 'authspidcie_cie_prod' );
+		delete_transient( 'authspidcie_cie_test' );
 	}
 
 	private static function fetch( $production ) {

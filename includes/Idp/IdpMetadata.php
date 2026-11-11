@@ -1,7 +1,7 @@
 <?php
-namespace WpSpidCie\Idp;
+namespace AuthSpidCie\Idp;
 
-use WpSpidCie\Xml\XmlSecurity;
+use AuthSpidCie\Xml\XmlSecurity;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

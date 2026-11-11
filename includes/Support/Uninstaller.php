@@ -1,5 +1,5 @@
 <?php
-namespace WpSpidCie\Support;
+namespace AuthSpidCie\Support;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -12,18 +12,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   anti-replay, elenco IdP, esito della verifica OpenSSL) e le opzioni di servizio.
  * - PER DEFAULT NON si cancellano il certificato, la chiave, il metadata registrato e le impostazioni
  *   dell'ente: rifare la registrazione presso AgID/CIE costa giorni e un'eliminazione per errore (o una
- *   reinstallazione) non deve farla perdere. Si cancellano solo con `WPSPID_REMOVE_DATA_ON_UNINSTALL`
+ *   reinstallazione) non deve farla perdere. Si cancellano solo con `AUTHSPIDCIE_REMOVE_DATA_ON_UNINSTALL`
  *   a true in wp-config.php.
  */
 class Uninstaller {
 
 	/** Opzioni di rete/sito con certificati e metadata registrato. */
 	public static function network_options() {
-		return array( 'wpspid_cert_spid', 'wpspid_cert_cie', 'wpspid_registered_spid', 'wpspid_registered_cie' );
+		return array( 'authspidcie_cert_spid', 'authspidcie_cert_cie', 'authspidcie_registered_spid', 'authspidcie_registered_cie' );
 	}
 
 	public static function remove_data_requested() {
-		return defined( 'WPSPID_REMOVE_DATA_ON_UNINSTALL' ) && true === (bool) WPSPID_REMOVE_DATA_ON_UNINSTALL;
+		return defined( 'AUTHSPIDCIE_REMOVE_DATA_ON_UNINSTALL' ) && true === (bool) AUTHSPIDCIE_REMOVE_DATA_ON_UNINSTALL;
 	}
 
 	public static function run() {
@@ -43,7 +43,7 @@ class Uninstaller {
 			}
 		}
 
-		delete_site_option( 'wpspid_migration_issues' );
+		delete_site_option( 'authspidcie_migration_issues' );
 		if ( $remove ) {
 			foreach ( self::network_options() as $name ) {
 				delete_site_option( $name );
@@ -53,13 +53,13 @@ class Uninstaller {
 
 	private static function clean_site( $remove ) {
 		global $wpdb;
-		delete_option( 'wpspid_production' );
-		delete_option( 'wpspid_preserved_path' );
-		delete_option( 'wpspid_restore_failed' );
+		delete_option( 'authspidcie_production' );
+		delete_option( 'authspidcie_preserved_path' );
+		delete_option( 'authspidcie_restore_failed' );
 		if ( $remove ) {
-			delete_option( 'wpspid_options' );
+			delete_option( 'authspidcie_options' );
 		}
 		// Transient e relativi timeout: sessioni, richieste in corso, anti-replay, cache IdP, probe.
-		$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_wpspid\_%' OR option_name LIKE '\_transient\_timeout\_wpspid\_%'" ); // phpcs:ignore WordPress.DB
+		$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_authspidcie\_%' OR option_name LIKE '\_transient\_timeout\_authspidcie\_%'" ); // phpcs:ignore WordPress.DB
 	}
 }

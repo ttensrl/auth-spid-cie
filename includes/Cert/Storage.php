@@ -1,5 +1,5 @@
 <?php
-namespace WpSpidCie\Cert;
+namespace AuthSpidCie\Cert;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Storage {
 
-	const PREFIX = 'wpspid_';
+	const PREFIX = 'authspidcie_';
 
 	private static function name( $name ) {
 		return self::PREFIX . preg_replace( '/[^a-z0-9_]/', '', strtolower( (string) $name ) );

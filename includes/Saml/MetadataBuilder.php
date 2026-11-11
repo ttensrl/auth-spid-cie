@@ -1,10 +1,10 @@
 <?php
-namespace WpSpidCie\Saml;
+namespace AuthSpidCie\Saml;
 
-use WpSpidCie\Cert\CertificateManager;
-use WpSpidCie\Support\Config;
-use WpSpidCie\Xml\Signer;
-use WpSpidCie\Xml\XmlSecurity;
+use AuthSpidCie\Cert\CertificateManager;
+use AuthSpidCie\Support\Config;
+use AuthSpidCie\Xml\Signer;
+use AuthSpidCie\Xml\XmlSecurity;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

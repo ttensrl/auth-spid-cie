@@ -1,13 +1,13 @@
 <?php
 // Minimal bootstrap: no WordPress needed for crypto/validator tests.
 define( 'ABSPATH', __DIR__ . '/' );
-define( 'WPSPID_PLUGIN_DIR', dirname( __DIR__ ) . '/' );
+define( 'AUTHSPIDCIE_PLUGIN_DIR', dirname( __DIR__ ) . '/' );
 spl_autoload_register( function ( $class ) {
-	$prefix = 'WpSpidCie\\';
+	$prefix = 'AuthSpidCie\\';
 	if ( 0 !== strncmp( $prefix, $class, strlen( $prefix ) ) ) {
 		return;
 	}
-	$file = WPSPID_PLUGIN_DIR . 'includes/' . str_replace( '\\', '/', substr( $class, strlen( $prefix ) ) ) . '.php';
+	$file = AUTHSPIDCIE_PLUGIN_DIR . 'includes/' . str_replace( '\\', '/', substr( $class, strlen( $prefix ) ) ) . '.php';
 	if ( file_exists( $file ) ) {
 		require $file;
 	}

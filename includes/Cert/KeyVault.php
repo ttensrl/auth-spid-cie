@@ -1,6 +1,6 @@
 <?php
 // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- i messaggi delle eccezioni non vengono stampati direttamente: chi li mostra li esegue con esc_html().
-namespace WpSpidCie\Cert;
+namespace AuthSpidCie\Cert;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -9,17 +9,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Cifratura facoltativa della chiave privata (libsodium).
  *
- * Se in wp-config.php e' definita `WPSPID_SECRET` (stringa non vuota) la chiave si salva cifrata con
+ * Se in wp-config.php e' definita `AUTHSPIDCIE_SECRET` (stringa non vuota) la chiave si salva cifrata con
  * `sodium_crypto_secretbox`; altrimenti in chiaro. Il blob porta un marcatore di versione e di
  * "cifrato si'/no" e, se cifrato, un'impronta breve della chiave derivata: cosi' si distingue
  * "costante assente" da "costante diversa" da "dato danneggiato" e non si restituisce mai una chiave
  * sbagliata. Non si cifra con i salt di WordPress (ruotarli renderebbe la chiave illeggibile).
  *
- * Formato:  wpspid:1:plain:<PEM>   |   wpspid:1:enc:<fingerprint>:<base64(nonce . cifrato)>
+ * Formato:  authspidcie:1:plain:<PEM>   |   authspidcie:1:enc:<fingerprint>:<base64(nonce . cifrato)>
  */
 class KeyVault {
 
-	const PREFIX  = 'wpspid:1:';
+	const PREFIX  = 'authspidcie:1:';
 	const CONTEXT = 'auth-spid-cie|key|v1';
 
 	const S_OK            = 'ok';            // Cifrata e leggibile.
@@ -31,7 +31,7 @@ class KeyVault {
 	const S_CORRUPT       = 'corrupt';       // Formato sconosciuto o dato alterato.
 	const S_MISSING       = 'missing';       // Nessun dato.
 
-	/** Solo per i test (una costante PHP non si puo' ridefinire): simula WPSPID_SECRET. */
+	/** Solo per i test (una costante PHP non si puo' ridefinire): simula AUTHSPIDCIE_SECRET. */
 	public static $test_secret = null;
 	/** Solo per i test: simula l'assenza di libsodium. */
 	public static $test_no_sodium = false;
@@ -41,7 +41,7 @@ class KeyVault {
 		if ( null !== self::$test_secret ) {
 			return (string) self::$test_secret;
 		}
-		return ( defined( 'WPSPID_SECRET' ) && is_string( WPSPID_SECRET ) ) ? WPSPID_SECRET : '';
+		return ( defined( 'AUTHSPIDCIE_SECRET' ) && is_string( AUTHSPIDCIE_SECRET ) ) ? AUTHSPIDCIE_SECRET : '';
 	}
 
 	public static function has_secret() {
@@ -152,14 +152,14 @@ class KeyVault {
 
 	/** Messaggio per un amministratore, per gli stati che impediscono di usare la chiave. */
 	public static function message( $status ) {
-		$tail = __( 'Restore the original WPSPID_SECRET constant or generate a new certificate (it will have to be registered again with AgID/CIE).', 'auth-spid-cie' );
+		$tail = __( 'Restore the original AUTHSPIDCIE_SECRET constant or generate a new certificate (it will have to be registered again with AgID/CIE).', 'auth-spid-cie' );
 		switch ( $status ) {
 			case self::S_NO_SECRET:
-				return __( 'The private key is unreadable: it is stored encrypted but WPSPID_SECRET is not defined in wp-config.php.', 'auth-spid-cie' ) . ' ' . $tail;
+				return __( 'The private key is unreadable: it is stored encrypted but AUTHSPIDCIE_SECRET is not defined in wp-config.php.', 'auth-spid-cie' ) . ' ' . $tail;
 			case self::S_WRONG_SECRET:
-				return __( 'The private key is unreadable: it was encrypted with a different WPSPID_SECRET.', 'auth-spid-cie' ) . ' ' . $tail;
+				return __( 'The private key is unreadable: it was encrypted with a different AUTHSPIDCIE_SECRET.', 'auth-spid-cie' ) . ' ' . $tail;
 			case self::S_NO_SODIUM:
-				return __( 'The private key cannot be used: the PHP sodium extension is not available but is needed (WPSPID_SECRET is defined or the key is stored encrypted). Enable the extension, or remove the constant if the key was never encrypted.', 'auth-spid-cie' );
+				return __( 'The private key cannot be used: the PHP sodium extension is not available but is needed (AUTHSPIDCIE_SECRET is defined or the key is stored encrypted). Enable the extension, or remove the constant if the key was never encrypted.', 'auth-spid-cie' );
 			case self::S_CORRUPT:
 				return __( 'The private key is unreadable: the stored data is damaged or in an unknown format.', 'auth-spid-cie' ) . ' ' . __( 'Generate a new certificate (it will have to be registered again with AgID/CIE) or restore a backup of the database.', 'auth-spid-cie' );
 			case self::S_MISSING:

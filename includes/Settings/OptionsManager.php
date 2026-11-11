@@ -1,18 +1,18 @@
 <?php
-namespace WpSpidCie\Settings;
+namespace AuthSpidCie\Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
- * Schema, defaults and sanitization of the plugin options (`wpspid_options`).
+ * Schema, defaults and sanitization of the plugin options (`authspidcie_options`).
  *
  * The fields mirror what the spid-cie-php setup asks for (see the SPID technical rules).
  */
 class OptionsManager {
 
-	const OPTION = 'wpspid_options';
+	const OPTION = 'authspidcie_options';
 
 	/** All SPID attributes with the default selection of spid-php (+ label). */
 	public static function attributes_catalog() {
@@ -261,7 +261,7 @@ class OptionsManager {
 				$out['test_idp_xml'] = '';
 			} elseif ( strlen( $xml ) > 102400 ) {
 				self::error( 'test_idp_xml', __( 'The pasted XML metadata is too large.', 'auth-spid-cie' ) );
-			} elseif ( null === \WpSpidCie\Idp\IdpMetadata::parse( $xml ) ) {
+			} elseif ( null === \AuthSpidCie\Idp\IdpMetadata::parse( $xml ) ) {
 				self::error( 'test_idp_xml', __( 'The pasted XML metadata is not valid (entityID, signing certificate and SingleSignOnService are required).', 'auth-spid-cie' ) );
 			} else {
 				$out['test_idp_xml'] = $xml;
@@ -338,7 +338,7 @@ class OptionsManager {
 
 	private static function error( $code, $message ) {
 		if ( function_exists( 'add_settings_error' ) ) {
-			add_settings_error( self::OPTION, 'wpspid_' . $code, $message, 'error' );
+			add_settings_error( self::OPTION, 'authspidcie_' . $code, $message, 'error' );
 		}
 	}
 }
