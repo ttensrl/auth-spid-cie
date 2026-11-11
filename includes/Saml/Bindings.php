@@ -33,9 +33,9 @@ class Bindings {
 		$sig_alg = 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256';
 		$query .= '&SigAlg=' . rawurlencode( $sig_alg );
 
-		$private_key = CertificateManager::get_private_key( $service );
+		$private_key = CertificateManager::private_key_or_fail( $service );
 		$signature   = '';
-		if ( ! $private_key || ! openssl_sign( $query, $signature, $private_key, OPENSSL_ALGO_SHA256 ) ) {
+		if ( ! openssl_sign( $query, $signature, $private_key, OPENSSL_ALGO_SHA256 ) ) {
 			throw new \Exception( 'Unable to sign the request (HTTP-Redirect).' );
 		}
 		$query .= '&Signature=' . rawurlencode( base64_encode( $signature ) );

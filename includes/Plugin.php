@@ -23,9 +23,9 @@ class Plugin {
 	}
 
 	private function init() {
-		// I dati (chiavi, certificati, metadata registrati) stanno in data/: l'aggiornamento del
-		// plugin cancella la cartella, quindi vanno messi al riparo e rimessi dopo.
-		\WpSpidCie\Support\DataPreserver::register();
+		// Chiavi, certificati e metadata registrati stanno nel database. Le versioni precedenti li
+		// tenevano in file (data/): se ne restano, li si sposta qui (con verifica prima di cancellare).
+		\WpSpidCie\Cert\Migrator::maybe_run();
 		add_action( 'admin_notices', array( $this, 'admin_notices' ) );
 
 		// Initialize settings (sempre: serve a vedere perche' il plugin e' bloccato).
@@ -56,17 +56,16 @@ class Plugin {
 		if ( $probe && empty( $probe['ok'] ) ) {
 			echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'SPID/CIE blocked:', 'auth-spid-cie' ) . '</strong> ' . esc_html__( 'this server does not allow generating or using certificates.', 'auth-spid-cie' ) . '</p><ul style="list-style:disc;margin-left:20px"><li>' . implode( '</li><li>', array_map( 'esc_html', $probe['errors'] ) ) . '</li></ul><p>' . esc_html__( 'Login, ACS and metadata are disabled until the problem is solved.', 'auth-spid-cie' ) . ' <a href="' . esc_url( admin_url( 'options-general.php?page=wpspid-settings' ) ) . '">' . esc_html__( 'Check again', 'auth-spid-cie' ) . '</a>.</p></div>';
 		}
-		$failed = get_option( \WpSpidCie\Support\DataPreserver::FAILED );
-		if ( $failed ) {
-			echo '<div class="notice notice-error"><p>' . wp_kses(
-				sprintf(
-					/* translators: 1: path of the backup copy, 2: path where the data folder must be restored. */
-					__( '<strong>SPID/CIE:</strong> after the update the data folder (keys and metadata) could not be put back in place. The backup copy is in %1$s: copy it to %2$s before doing anything else.', 'auth-spid-cie' ),
-					'<code>' . esc_html( $failed ) . '</code>',
-					'<code>' . esc_html( \WpSpidCie\Cert\CertificateManager::default_storage_dir() ) . '</code>'
-				),
-				array( 'strong' => array(), 'code' => array() )
-			) . '</p></div>';
+		foreach ( array( 'spid' => 'SPID', 'cie' => 'CIE' ) as $service => $label ) {
+			$state = \WpSpidCie\Cert\CertificateManager::key_state( $service );
+			if ( \WpSpidCie\Cert\KeyVault::S_MISSING === $state['status'] || $state['readable'] ) {
+				continue;
+			}
+			echo '<div class="notice notice-error"><p><strong>' . esc_html( sprintf( /* translators: %s: SPID or CIE. */ __( 'SPID/CIE (%s): the private key is unusable.', 'auth-spid-cie' ), $label ) ) . '</strong> ' . esc_html( \WpSpidCie\Cert\KeyVault::message( $state['status'] ) ) . ' ' . esc_html__( 'Login and metadata for this service are disabled.', 'auth-spid-cie' ) . '</p></div>';
+		}
+		$issues = \WpSpidCie\Cert\Migrator::issues();
+		if ( $issues ) {
+			echo '<div class="notice notice-warning"><p><strong>' . esc_html__( 'SPID/CIE: the move of the old key files to the database is not complete.', 'auth-spid-cie' ) . '</strong> ' . esc_html__( 'Nothing was deleted: the old files are still where they were.', 'auth-spid-cie' ) . '</p><ul style="list-style:disc;margin-left:20px"><li>' . implode( '</li><li>', array_map( 'esc_html', $issues ) ) . '</li></ul></div>';
 		}
 	}
 

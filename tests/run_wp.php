@@ -13,16 +13,20 @@ $GLOBALS['trans']  = array();
 $GLOBALS['redirect'] = null;
 $GLOBALS['tmp']    = sys_get_temp_dir() . '/wpspid-test-' . bin2hex( random_bytes( 4 ) );
 mkdir( $GLOBALS['tmp'], 0777, true );
-// Mai nella cartella dati reale del plugin: i test usano una cartella temporanea.
-define( 'WPSPID_PRIVATE_DIR', $GLOBALS['tmp'] . '/private' );
-define( 'WP_CONTENT_DIR', $GLOBALS['tmp'] . '/content' );
-mkdir( WP_CONTENT_DIR . '/upgrade', 0777, true );
+// Mai la cartella data/ reale del plugin: la migrazione cerca nelle cartelle temporanee dei test.
+$GLOBALS['mig_data']   = $GLOBALS['tmp'] . '/old-data/';
+$GLOBALS['mig_legacy'] = $GLOBALS['tmp'] . '/old-uploads/';
+$GLOBALS['filters']['wpspid_migration_dirs'] = function () { return array( 'data' => $GLOBALS['mig_data'], 'legacy' => $GLOBALS['mig_legacy'] ); };
 
 function get_option( $k, $d = false ) { return array_key_exists( $k, $GLOBALS['opts'] ) ? $GLOBALS['opts'][ $k ] : $d; }
 function home_url( $p = '' ) { return 'https://sp.example.it' . $p; }
 function get_transient( $k ) { return array_key_exists( $k, $GLOBALS['trans'] ) ? $GLOBALS['trans'][ $k ] : false; }
 function set_transient( $k, $v, $t = 0 ) { $GLOBALS['trans'][ $k ] = $v; return true; }
 function delete_transient( $k ) { unset( $GLOBALS['trans'][ $k ] ); return true; }
+$GLOBALS['site_opts'] = array();
+function get_site_option( $k, $d = false ) { return array_key_exists( $k, $GLOBALS['site_opts'] ) ? $GLOBALS['site_opts'][ $k ] : $d; }
+function update_site_option( $k, $v ) { $GLOBALS['site_opts'][ $k ] = $v; return true; }
+function delete_site_option( $k ) { unset( $GLOBALS['site_opts'][ $k ] ); return true; }
 function update_option( $k, $v ) { $GLOBALS['opts'][ $k ] = $v; return true; }
 function delete_option( $k ) { unset( $GLOBALS['opts'][ $k ] ); return true; }
 function wp_upload_dir() { return array( 'basedir' => $GLOBALS['tmp'] ); }
@@ -77,10 +81,7 @@ throws( 'certificate generation refuses missing data', function () {
 } );
 $info = CertificateManager::info( 'spid' );
 ok( $info && $info['days_left'] >= 29, 'CertificateManager::info reports validity' );
-$paths = CertificateManager::get_paths( 'spid' );
 ok( CertificateManager::exists( 'spid' ), 'certificate generated' );
-ok( ( fileperms( $paths['key'] ) & 0777 ) === 0600, 'private key file mode is 0600' );
-ok( strpos( file_get_contents( dirname( $paths['key'] ) . '/.htaccess' ), 'Require all denied' ) !== false, '.htaccess uses Apache 2.4 syntax' );
 throws( 'import rejects key that does not match certificate', function () {
 	$other = openssl_pkey_new( array( 'private_key_bits' => 2048 ) );
 	openssl_pkey_export( $other, $pem );
@@ -209,126 +210,171 @@ Requirements::$env = array();
 ok( false === CertificateManager::exists( 'blocked' ), 'no key/cert files are created when generation is blocked' );
 ok( true === Requirements::probe( true )['ok'], 'probe recovers once the environment is fine again' );
 
-echo "== Storage inside the plugin folder\n";
-ok( WPSPID_PLUGIN_DIR . 'data/' === CertificateManager::default_storage_dir(), 'default storage is the plugin data/ folder' );
-$kf = CertificateManager::get_paths( 'spid' )['key'];
-ok( '.key.php' === substr( $kf, -8 ), 'private key is stored as a .php file' );
-ok( 0 === strpos( file_get_contents( $kf ), '<?php' ), 'key file starts with a PHP guard' );
-$out = shell_exec( escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( $kf ) . ' 2>&1' );
-ok( '' === trim( (string) $out ), 'executing the key file prints nothing (a web server that runs PHP leaks nothing)' );
-ok( false !== openssl_pkey_get_private( CertificateManager::get_private_key( 'spid' ) ), 'the guard is stripped when the key is read' );
-$gi = file_get_contents( dirname( $kf ) . '/.gitignore' );
-ok( false !== strpos( $gi, '*' ) && false !== strpos( $gi, '!.htaccess' ), 'data dir has a .gitignore that excludes everything else' );
-ok( file_exists( dirname( $kf ) . '/index.php' ), 'data dir has an index.php' );
+echo "== Storage nel database (niente file)\n";
+use WpSpidCie\Cert\KeyVault;
+use WpSpidCie\Cert\Migrator;
+use WpSpidCie\Cert\Storage;
+use WpSpidCie\Saml\MetadataSnapshot as Snap;
+ok( isset( $GLOBALS['site_opts']['wpspid_cert_spid'] ) && ! isset( $GLOBALS['opts']['wpspid_cert_spid'] ), 'the certificate is stored with the (network) site option API, never in a regular autoloaded option' );
+$rec = $GLOBALS['site_opts']['wpspid_cert_spid'];
+ok( 0 === strpos( $rec['key'], 'wpspid:1:plain:' ) && false !== strpos( $rec['key'], 'PRIVATE KEY' ), 'without WPSPID_SECRET the key blob is marked "plain", version 1' );
+ok( KeyVault::S_PLAIN === CertificateManager::key_state( 'spid' )['status'] && false !== openssl_pkey_get_private( CertificateManager::get_private_key( 'spid' ) ), 'plain key: state plain, readable' );
+ok( ! is_dir( WPSPID_PLUGIN_DIR . 'data/' ) || array() === array_diff( scandir( WPSPID_PLUGIN_DIR . 'data/' ), array( '.', '..', '.gitignore', '.htaccess', 'index.php' ) ), 'generating a certificate writes nothing into the plugin folder' );
 $kp = openssl_pkey_new( array( 'private_key_bits' => 2048 ) );
 openssl_pkey_export( $kp, $imp_key );
 $csr  = openssl_csr_new( array( 'commonName' => 'imp' ), $kp );
 openssl_x509_export( openssl_csr_sign( $csr, null, $kp, 30 ), $imp_cert );
 CertificateManager::import( 'imported', $imp_key, $imp_cert );
-ok( 0 === strpos( file_get_contents( CertificateManager::get_paths( 'imported' )['key'] ), '<?php' ), 'imported keys get the guard too' );
-ok( trim( $imp_key ) === trim( CertificateManager::get_private_key( 'imported' ) ), 'imported key round-trips unchanged' );
-// Migrazione dalla vecchia posizione (uploads, chiave in chiaro).
-$legacy = $GLOBALS['tmp'] . '/legacy/';
-mkdir( $legacy, 0777, true );
-file_put_contents( $legacy . 'old-sp.key', $imp_key );
-file_put_contents( $legacy . 'old-sp.crt', $imp_cert );
-ok( true === CertificateManager::migrate_legacy( 'old', $legacy ), 'legacy key/cert are migrated' );
-ok( trim( $imp_key ) === trim( CertificateManager::get_private_key( 'old' ) ) && ! file_exists( $legacy . 'old-sp.key' ), 'migrated key is readable and the exposed legacy key is deleted' );
-file_put_contents( $legacy . 'bad-sp.key', $imp_key );
+ok( trim( $imp_key ) === trim( CertificateManager::get_private_key( 'imported' ) ) && trim( $imp_cert ) === trim( CertificateManager::get_certificate( 'imported' ) ), 'imported key and certificate round-trip unchanged' );
+ok( Storage::get( 'cert_a/../b' ) === null && isset( $GLOBALS['site_opts'] ) , 'storage names are sanitised' );
+
+echo "== Cifratura facoltativa (libsodium, WPSPID_SECRET)\n";
+if ( ! KeyVault::sodium_available() ) {
+	echo "  SKIP sodium not available in this PHP build\n";
+} else {
+	KeyVault::$test_secret = 'segreto-di-prova-' . str_repeat( 'x', 20 );
+	$blob = KeyVault::seal( $imp_key );
+	ok( 0 === strpos( $blob, 'wpspid:1:enc:' ) && false === strpos( $blob, 'PRIVATE KEY' ), 'with the constant the blob is marked "enc" v1 and holds no PEM text' );
+	ok( 1 === preg_match( '/^wpspid:1:enc:[a-f0-9]{16}:[A-Za-z0-9+\/=]+$/', $blob ), 'blob = marker + 8-byte key fingerprint + base64(nonce.ciphertext)' );
+	ok( KeyVault::seal( $imp_key ) !== $blob, 'a fresh random nonce is used every time' );
+	$o = KeyVault::open( $blob );
+	ok( KeyVault::S_OK === $o['status'] && $imp_key === $o['key'], 'round trip: the same constant decrypts to the exact original key' );
+	CertificateManager::import( 'enc', $imp_key, $imp_cert );
+	ok( 0 === strpos( $GLOBALS['site_opts']['wpspid_cert_enc']['key'], 'wpspid:1:enc:' ) && trim( $imp_key ) === trim( CertificateManager::get_private_key( 'enc' ) ), 'import with the constant stores the key encrypted and reads it back' );
+	ok( KeyVault::S_OK === CertificateManager::key_state( 'enc' )['status'], 'state ok for an encrypted, readable key' );
+	// Costante cambiata.
+	KeyVault::$test_secret = 'un-altro-segreto-completamente-diverso';
+	$o = KeyVault::open( $blob );
+	ok( KeyVault::S_WRONG_SECRET === $o['status'] && false === $o['key'], 'a different constant is recognised (wrong_secret), no key returned' );
+	ok( false === CertificateManager::get_private_key( 'enc' ) && false !== CertificateManager::get_certificate( 'enc' ), 'unreadable key: get_private_key() is false, the public certificate is still there' );
+	throws( 'signing refused with an explicit reason when the constant changed', function () { CertificateManager::private_key_or_fail( 'enc' ); } );
+	// Costante assente.
+	KeyVault::$test_secret = '';
+	ok( KeyVault::S_NO_SECRET === KeyVault::open( $blob )['status'] && false === CertificateManager::get_private_key( 'enc' ), 'constant missing: no_secret, no key returned' );
+	ok( false !== strpos( KeyVault::message( KeyVault::S_NO_SECRET ), 'WPSPID_SECRET' ) && false !== strpos( KeyVault::message( KeyVault::S_NO_SECRET ), 'registered again' ), 'the message tells to restore the constant or regenerate and re-register' );
+	// Dato alterato.
+	KeyVault::$test_secret = 'segreto-di-prova-' . str_repeat( 'x', 20 );
+	$tampered = substr( $blob, 0, -6 ) . ( 'AAAAAA' === substr( $blob, -6 ) ? 'BBBBBB' : 'AAAAAA' );
+	ok( KeyVault::S_CORRUPT === KeyVault::open( $tampered )['status'], 'altered ciphertext is detected (corrupt), never returned as a key' );
+	ok( KeyVault::S_CORRUPT === KeyVault::open( 'wpspid:9:whatever' )['status'] && KeyVault::S_CORRUPT === KeyVault::open( '-----BEGIN PRIVATE KEY-----' )['status'], 'unknown format/version is corrupt' );
+	// Chiave in chiaro e costante definita dopo.
+	$o = KeyVault::open( 'wpspid:1:plain:' . $imp_key );
+	ok( KeyVault::S_PLAIN_PENDING === $o['status'] && $imp_key === $o['key'], 'plain key + constant defined later: readable, flagged plain_pending' );
+	CertificateManager::reseal( 'imported' );
+	ok( 0 === strpos( $GLOBALS['site_opts']['wpspid_cert_imported']['key'], 'wpspid:1:enc:' ) && KeyVault::S_OK === CertificateManager::key_state( 'imported' )['status'] && trim( $imp_key ) === trim( CertificateManager::get_private_key( 'imported' ) ), 'reseal() encrypts a plain key in place' );
+	// Costante tolta dopo la cifratura.
+	KeyVault::$test_secret = null;
+	ok( KeyVault::S_NO_SECRET === CertificateManager::key_state( 'imported' )['status'], 'constant removed after encrypting: reported, key not guessed' );
+	// Sodium mancante.
+	KeyVault::$test_secret    = 'segreto-di-prova-' . str_repeat( 'x', 20 );
+	KeyVault::$test_no_sodium = true;
+	ok( KeyVault::S_NO_SODIUM === KeyVault::open( $blob )['status'] && KeyVault::S_NO_SODIUM === KeyVault::open( 'wpspid:1:plain:' . $imp_key )['status'], 'constant defined but libsodium missing: blocked with its own status' );
+	throws( 'saving is refused when the constant is defined and libsodium is missing', function () use ( $imp_key, $imp_cert ) { CertificateManager::import( 'nosodium', $imp_key, $imp_cert ); } );
+	ok( false === CertificateManager::exists( 'nosodium' ), 'a refused save leaves nothing behind' );
+	KeyVault::$test_no_sodium = false;
+	KeyVault::$test_secret    = null;
+	CertificateManager::delete( 'enc' );
+	CertificateManager::delete( 'imported' );
+}
+
+echo "== Migrazione dai file (data/ e uploads) al database\n";
+$saved_site_opts = $GLOBALS['site_opts']; // I test seguenti usano i certificati spid/cie creati prima: si ripristinano alla fine.
+CertificateManager::delete( 'cie' );
+function mk_old_data( $dir, $key, $cert, $with_snapshot = true ) {
+	mkdir( $dir, 0777, true );
+	file_put_contents( $dir . 'spid-sp.key.php', "<?php exit; ?>\n" . $key );
+	file_put_contents( $dir . 'spid-sp.crt', $cert );
+	foreach ( array( '.htaccess' => 'Require all denied', 'index.php' => '<?php // Silence is golden.', '.gitignore' => "*\n" ) as $n => $c ) { file_put_contents( $dir . $n, $c ); }
+	if ( $with_snapshot ) {
+		file_put_contents( $dir . 'registered-spid.xml', '<EntityDescriptor entityID="x"/>' );
+		file_put_contents( $dir . 'registered-spid.json', json_encode( array( 'sha256' => str_repeat( 'a', 64 ), 'saved_at' => '2026-01-01T00:00:00+00:00', 'note' => 'n', 'entity_id' => 'x' ) ) );
+	}
+}
+CertificateManager::delete( 'spid' );
+Snap::delete( 'spid' );
+Migrator::reset();
+ok( array() === Migrator::run()['migrated'], 'nothing to migrate when the old folders do not exist' );
+mk_old_data( $GLOBALS['mig_data'], $imp_key, $imp_cert );
+Migrator::reset();
+$res = Migrator::run();
+ok( in_array( 'spid', $res['migrated'], true ) && in_array( 'registered-spid', $res['migrated'], true ) && array() === $res['issues'], 'key, certificate and registered metadata are migrated without issues' );
+ok( trim( $imp_key ) === trim( CertificateManager::get_private_key( 'spid' ) ) && trim( $imp_cert ) === trim( CertificateManager::get_certificate( 'spid' ) ), 'the old pair is now in the database, identical' );
+$sn = Snap::get( 'spid' );
+ok( $sn && '<EntityDescriptor entityID="x"/>' === $sn['xml'] && 'n' === $sn['note'], 'the registered metadata is in the database, identical' );
+ok( ! is_dir( $GLOBALS['mig_data'] ), 'only AFTER the verification the old files are deleted, protection files and the empty folder included' );
+Migrator::reset();
+ok( array() === Migrator::run()['migrated'] && null === Storage::get( 'migration_issues' ), 'running again is a no-op (idempotent)' );
+
+// Vecchia cartella uploads (chiave in chiaro).
+CertificateManager::delete( 'spid' );
+mkdir( $GLOBALS['mig_legacy'], 0777, true );
+file_put_contents( $GLOBALS['mig_legacy'] . 'cie-sp.key', $imp_key );
+file_put_contents( $GLOBALS['mig_legacy'] . 'cie-sp.crt', $imp_cert );
+Migrator::reset();
+$res = Migrator::run();
+ok( trim( $imp_key ) === trim( CertificateManager::get_private_key( 'cie' ) ) && ! file_exists( $GLOBALS['mig_legacy'] . 'cie-sp.key' ) && ! is_dir( $GLOBALS['mig_legacy'] ), 'legacy uploads folder: migrated, exposed plain key deleted, folder removed' );
+CertificateManager::delete( 'cie' );
+
+// Verifica che fallisce -> non si cancella niente.
 openssl_pkey_export( openssl_pkey_new( array( 'private_key_bits' => 2048 ) ), $other_key );
-file_put_contents( $legacy . 'bad-sp.crt', CertificateManager::get_certificate( 'spid' ) );
-ok( false === CertificateManager::migrate_legacy( 'bad', $legacy ) && file_exists( $legacy . 'bad-sp.key' ) && ! CertificateManager::exists( 'bad' ), 'mismatched legacy pair is NOT migrated and left untouched' );
+mk_old_data( $GLOBALS['mig_data'], $other_key, $imp_cert ); // chiave e certificato non corrispondono
+Migrator::reset();
+$res = Migrator::run();
+ok( ! in_array( 'spid', $res['migrated'], true ) && count( $res['issues'] ) >= 1 && false === CertificateManager::exists( 'spid' ), 'mismatched pair: not migrated, an issue is recorded' );
+ok( is_file( $GLOBALS['mig_data'] . 'spid-sp.key.php' ) && is_file( $GLOBALS['mig_data'] . 'spid-sp.crt' ) && is_file( $GLOBALS['mig_data'] . '.htaccess' ), 'mismatched pair: every old file is left in place' );
+ok( ! empty( Storage::get( 'migration_issues' ) ), 'the issue is persisted for the admin notice' );
+exec( 'rm -rf ' . escapeshellarg( $GLOBALS['mig_data'] ) );
 
-echo "== Data survives plugin updates\n";
-use WpSpidCie\Support\DataPreserver;
-$src = $GLOBALS['tmp'] . '/upd/data';
-mkdir( $src . '/sub', 0777, true );
-file_put_contents( $src . '/spid-sp.key.php', "<?php exit; ?>\nSECRET" );
-chmod( $src . '/spid-sp.key.php', 0600 );
-file_put_contents( $src . '/.htaccess', 'deny' );
-file_put_contents( $src . '/sub/registered-spid.xml', '<x/>' );
-$bk = $GLOBALS['tmp'] . '/upd/backup';
-ok( true === DataPreserver::backup( $src, $bk ), 'backup copies the data dir' );
-DataPreserver::remove_dir( $src ); // quello che fa WordPress durante l'aggiornamento
-ok( ! is_dir( $src ), 'WordPress update wipes the plugin data dir (simulated)' );
-ok( true === DataPreserver::restore( $bk, $src ), 'restore brings the files back' );
-ok( "<?php exit; ?>\nSECRET" === file_get_contents( $src . '/spid-sp.key.php' ) && '<x/>' === file_get_contents( $src . '/sub/registered-spid.xml' ) && 'deny' === file_get_contents( $src . '/.htaccess' ), 'restored files (including dotfiles and subfolders) are identical' );
-ok( ( fileperms( $src . '/spid-sp.key.php' ) & 0777 ) === 0600, 'restored private key keeps mode 0600' );
-ok( ! is_dir( $bk ), 'backup is removed after a verified restore' );
-mkdir( $bk, 0777, true );
-file_put_contents( $bk . '/spid-sp.key.php', 'X' );
-ok( false === DataPreserver::restore( $bk, '/proc/forbidden/data' ) && is_dir( $bk ), 'failed restore keeps the backup' );
-ok( false === DataPreserver::backup( $GLOBALS['tmp'] . '/does-not-exist', $GLOBALS['tmp'] . '/x' ), 'nothing to back up -> false, nothing created' );
-$GLOBALS['opts']['wpspid_preserved_path'] = null;
-DataPreserver::on_pre_install( true, array( 'type' => 'plugin', 'plugin' => 'another-plugin/another.php' ) );
-ok( empty( $GLOBALS['opts']['wpspid_preserved_path'] ), 'updates of other plugins are ignored' );
+// Salvataggio che non torna: simulato con una costante definita ma senza sodium -> store() rifiuta.
+if ( KeyVault::sodium_available() ) {
+	mk_old_data( $GLOBALS['mig_data'], $imp_key, $imp_cert );
+	KeyVault::$test_secret = 'segreto-di-prova-' . str_repeat( 'x', 20 );
+	KeyVault::$test_no_sodium = true;
+	Migrator::reset();
+	$res = Migrator::run();
+	ok( ! in_array( 'spid', $res['migrated'], true ) && is_file( $GLOBALS['mig_data'] . 'spid-sp.key.php' ) && ! CertificateManager::exists( 'spid' ), 'if saving to the database fails nothing is deleted and nothing is half-written' );
+	KeyVault::$test_no_sodium = false;
+	Migrator::reset();
+	$res = Migrator::run();
+	ok( in_array( 'spid', $res['migrated'], true ) && 0 === strpos( $GLOBALS['site_opts']['wpspid_cert_spid']['key'], 'wpspid:1:enc:' ) && ! is_dir( $GLOBALS['mig_data'] ), 'with the constant defined the migration stores the key encrypted' );
+	ok( trim( $imp_key ) === trim( CertificateManager::get_private_key( 'spid' ) ), 'and it reads back correctly' );
+	KeyVault::$test_secret = null;
+	CertificateManager::delete( 'spid' );
+	Snap::delete( 'spid' );
+}
 
-// Reinstallazione / upload con "sostituisci": WordPress NON passa la chiave 'plugin' agli hook.
-// (Trovato con un vero `wp plugin install --force`, che aveva cancellato i dati.)
-$inst = $GLOBALS['tmp'] . '/inst';
-mkdir( $inst . '/auth-spid-cie', 0777, true );
-file_put_contents( $inst . '/auth-spid-cie/auth-spid-cie.php', '<?php // Plugin Name: Auth SPID CIE' );
-$data_old = $GLOBALS['tmp'] . '/inst-data';
-mkdir( $data_old, 0777, true );
-file_put_contents( $data_old . '/spid-sp.key.php', "<?php exit; ?>\nSECRET2" );
-chmod( $data_old . '/spid-sp.key.php', 0600 );
-DataPreserver::$test_dir    = $data_old;
-DataPreserver::$test_folder = 'auth-spid-cie';
-$GLOBALS['opts']['wpspid_preserved_path'] = null;
-$install_extra = array( 'type' => 'plugin', 'action' => 'install' );
-$sel = DataPreserver::on_source_selection( $inst . '/auth-spid-cie', '/x', null, $install_extra );
-ok( $inst . '/auth-spid-cie' === $sel, 'source selection returns the source unchanged' );
-ok( ! empty( $GLOBALS['opts']['wpspid_preserved_path'] ) && is_dir( $GLOBALS['opts']['wpspid_preserved_path'] ), 'reinstall (hook_extra without "plugin") triggers the backup' );
-DataPreserver::remove_dir( $data_old );
-$new_plugin = $GLOBALS['tmp'] . '/inst-newplugin';
-mkdir( $new_plugin, 0777, true );
-DataPreserver::on_post_install( true, $install_extra, array( 'destination' => $new_plugin ) );
-ok( "<?php exit; ?>\nSECRET2" === @file_get_contents( $new_plugin . '/data/spid-sp.key.php' ), 'reinstall restores the data into the new plugin folder' );
-ok( empty( $GLOBALS['opts']['wpspid_preserved_path'] ), 'and clears the backup pointer' );
-// negativi
-$GLOBALS['opts']['wpspid_preserved_path'] = null;
-mkdir( $data_old, 0777, true );
-file_put_contents( $data_old . '/k', 'x' );
-mkdir( $inst . '/another-plugin', 0777, true );
-file_put_contents( $inst . '/another-plugin/another.php', '<?php' );
-DataPreserver::on_source_selection( $inst . '/another-plugin', '/x', null, $install_extra );
-ok( empty( $GLOBALS['opts']['wpspid_preserved_path'] ), 'installing a different plugin is ignored' );
-mkdir( $inst . '/no-main', 0777, true );
-rename( $inst . '/no-main', $inst . '/auth-spid-cie-x' );
-DataPreserver::on_source_selection( $inst . '/auth-spid-cie-x', '/x', null, $install_extra );
-ok( empty( $GLOBALS['opts']['wpspid_preserved_path'] ), 'a folder with another name is ignored' );
-DataPreserver::on_source_selection( $inst . '/auth-spid-cie', '/x', null, array( 'type' => 'theme', 'action' => 'install' ) );
-ok( empty( $GLOBALS['opts']['wpspid_preserved_path'] ), 'themes are ignored' );
-// Installazione fallita: la copia di sicurezza non deve restare orfana se la cartella dati e' ancora al suo posto.
-// (Trovato in una prova vera: l'aggiornamento e' fallito prima di cancellare la cartella e la copia e' rimasta.)
-$GLOBALS['opts']['wpspid_preserved_path'] = null;
-mkdir( $data_old, 0777, true );
-file_put_contents( $data_old . '/k.key.php', 'SECRET3' );
-DataPreserver::on_source_selection( $inst . '/auth-spid-cie', '/x', null, $install_extra );
-$stale = $GLOBALS['opts']['wpspid_preserved_path'];
-ok( ! empty( $stale ) && is_dir( $stale ), 'backup made before the install' );
-$err = new WP_Error();
-ok( $err === DataPreserver::on_install_result( $err, $install_extra ), 'install result is passed through untouched' );
-ok( empty( $GLOBALS['opts']['wpspid_preserved_path'] ) && ! is_dir( $stale ), 'failed install with the data folder still in place: the useless backup is removed' );
-DataPreserver::on_source_selection( $inst . '/auth-spid-cie', '/x', null, $install_extra );
-$kept = $GLOBALS['opts']['wpspid_preserved_path'];
-DataPreserver::remove_dir( $data_old ); // l'aggiornamento ha gia' cancellato la cartella
-DataPreserver::on_install_result( new WP_Error(), $install_extra );
-ok( ! empty( $GLOBALS['opts']['wpspid_preserved_path'] ) && is_dir( $kept ), 'failed install after the data folder was wiped: the backup is KEPT' );
-DataPreserver::remove_dir( $kept );
-$GLOBALS['opts']['wpspid_preserved_path'] = null;
-$ok_result = array( 'destination' => '/x' );
-ok( $ok_result === DataPreserver::on_install_result( $ok_result, $install_extra ), 'a successful install is left alone (the restore happens in post_install)' );
-DataPreserver::reset_state();
-@mkdir( $data_old, 0777, true );
-file_put_contents( $data_old . '/k', 'x' );
-DataPreserver::$test_backup_root = '/proc/forbidden';
-$res = DataPreserver::on_source_selection( $inst . '/auth-spid-cie', '/x', null, $install_extra );
-ok( $res instanceof WP_Error && empty( $GLOBALS['opts']['wpspid_preserved_path'] ), 'if the backup cannot be made the installation is aborted (WP_Error)' );
-DataPreserver::$test_backup_root = null;
-DataPreserver::$test_dir         = null;
-DataPreserver::$test_folder      = null;
-$GLOBALS['opts'] = array();
+// Il database ha gia' un certificato diverso: i file vecchi non si toccano.
+$ok_k   = openssl_pkey_get_private( $other_key );
+$ok_csr = openssl_csr_new( array( 'commonName' => 'other' ), $ok_k );
+openssl_x509_export( openssl_csr_sign( $ok_csr, null, $ok_k, 30 ), $other_cert );
+CertificateManager::import( 'spid', $other_key, $other_cert );
+mk_old_data( $GLOBALS['mig_data'], $imp_key, $imp_cert, false );
+Migrator::reset();
+$res = Migrator::run();
+ok( ! in_array( 'spid', $res['migrated'], true ) && is_file( $GLOBALS['mig_data'] . 'spid-sp.key.php' ) && count( $res['issues'] ) >= 1, 'the database holds another certificate: old files are NOT deleted, conflict reported' );
+exec( 'rm -rf ' . escapeshellarg( $GLOBALS['mig_data'] ) );
+CertificateManager::delete( 'spid' );
+Migrator::reset();
+Migrator::run();
+ok( array() === Migrator::issues(), 'issues are cleared once a run finds nothing wrong' );
+CertificateManager::delete( 'imported' );
+
+echo "== Disinstallazione\n";
+use WpSpidCie\Support\Uninstaller;
+$GLOBALS['wpdb'] = new class { public $options = 'wp_options'; public $queries = array(); public function query( $q ) { $this->queries[] = $q; return 1; } };
+function delete_option_t( $k ) {}
+$GLOBALS['opts']['wpspid_options'] = array( 'org_name' => 'X' );
+CertificateManager::import( 'spid', $imp_key, $imp_cert );
+Snap::store_raw( 'spid', '<EntityDescriptor/>', array( 'sha256' => str_repeat( 'b', 64 ) ) );
+Uninstaller::run();
+ok( ! empty( $GLOBALS['site_opts']['wpspid_cert_spid'] ) && null !== Snap::get( 'spid' ) && ! empty( $GLOBALS['opts']['wpspid_options'] ), 'default: certificate, key, registered metadata and organization settings are KEPT' );
+ok( 1 === count( $GLOBALS['wpdb']->queries ) && false !== strpos( $GLOBALS['wpdb']->queries[0], 'transient' ) && false !== strpos( $GLOBALS['wpdb']->queries[0], 'wpspid' ), 'default: temporary data (sessions, pending requests, caches) is deleted' );
+define( 'WPSPID_REMOVE_DATA_ON_UNINSTALL', true );
+Uninstaller::run();
+ok( ! isset( $GLOBALS['site_opts']['wpspid_cert_spid'] ) && null === Snap::get( 'spid' ) && ! isset( $GLOBALS['opts']['wpspid_options'] ), 'WPSPID_REMOVE_DATA_ON_UNINSTALL=true: everything is deleted' );
+CertificateManager::delete( 'spid' );
+$GLOBALS['site_opts'] = $saved_site_opts;
+$GLOBALS['opts']['wpspid_options'] = array();
 
 echo "== Sessione (cookie + transient, senza sessioni PHP)\n";
 use WpSpidCie\Auth\SessionGate;
@@ -377,7 +423,7 @@ ok( 'none' === MetadataSnapshot::status( 'spid', $m1 )['state'], 'no snapshot ye
 MetadataSnapshot::save( 'spid', $m1, 'registrato su AgID 2026-11' );
 $st = MetadataSnapshot::status( 'spid', $m2 );
 ok( 'same' === $st['state'] && 'registrato su AgID 2026-11' === $st['note'], 'regenerated metadata equals the registered one' );
-ok( $m1 === file_get_contents( CertificateManager::get_storage_dir() . 'registered-spid.xml' ), 'registered XML is stored in the data folder' );
+ok( $m1 === MetadataSnapshot::get( 'spid' )['xml'] && isset( $GLOBALS['site_opts']['wpspid_registered_spid'] ), 'registered XML is stored in the database' );
 ok( 'none' === MetadataSnapshot::status( 'cie', MetadataBuilder::generate( 'cie' ) )['state'], 'snapshot is per service (cie still none)' );
 $GLOBALS['opts']['wpspid_options']['org_name'] = 'Altro Ente Srl';
 ok( 'changed' === MetadataSnapshot::status( 'spid', MetadataBuilder::generate( 'spid' ) )['state'], 'a changed organisation name is detected as a difference' );

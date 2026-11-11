@@ -1,7 +1,7 @@
 <?php
 namespace WpSpidCie\Saml;
 
-use WpSpidCie\Cert\CertificateManager;
+use WpSpidCie\Cert\Storage;
 use WpSpidCie\Xml\XmlSecurity;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -27,10 +27,8 @@ class MetadataSnapshot {
 		return 'cie' === $service ? 'cie' : 'spid';
 	}
 
-	private static function paths( $service ) {
-		$dir = CertificateManager::get_storage_dir();
-		$s   = self::service( $service );
-		return array( 'xml' => $dir . 'registered-' . $s . '.xml', 'meta' => $dir . 'registered-' . $s . '.json' );
+	private static function name( $service ) {
+		return 'registered_' . self::service( $service );
 	}
 
 	/**
@@ -70,30 +68,34 @@ class MetadataSnapshot {
 	public static function save( $service, $xml, $note = '' ) {
 		$fp    = self::fingerprint( $xml ); // Valida anche che sia metadata.
 		$doc   = XmlSecurity::load_xml( $xml );
-		$p     = self::paths( $service );
 		$meta  = array(
 			'sha256'    => $fp,
 			'saved_at'  => gmdate( 'c' ),
 			'note'      => (string) $note,
 			'entity_id' => $doc->documentElement->getAttribute( 'entityID' ),
 		);
-		if ( false === file_put_contents( $p['xml'], $xml ) || false === file_put_contents( $p['meta'], wp_json_encode_compat( $meta ) ) ) {
-			throw new \Exception( 'Unable to save the registered metadata.' );
-		}
+		self::store_raw( $service, $xml, $meta );
 		return $meta;
+	}
+
+	/** Salva xml e meta cosi' come sono (usato anche dalla migrazione). */
+	public static function store_raw( $service, $xml, array $meta ) {
+		Storage::set( self::name( $service ), array( 'xml' => (string) $xml, 'meta' => $meta ) );
+	}
+
+	public static function delete( $service ) {
+		Storage::delete( self::name( $service ) );
 	}
 
 	/** @return array|null {sha256, saved_at, note, entity_id, xml} */
 	public static function get( $service ) {
-		$p = self::paths( $service );
-		if ( ! is_file( $p['xml'] ) || ! is_file( $p['meta'] ) ) {
+		\WpSpidCie\Cert\Migrator::maybe_run();
+		$r = Storage::get( self::name( $service ) );
+		if ( ! $r || empty( $r['xml'] ) || ! is_array( $r['meta'] ?? null ) || empty( $r['meta']['sha256'] ) ) {
 			return null;
 		}
-		$meta = json_decode( (string) file_get_contents( $p['meta'] ), true );
-		if ( ! is_array( $meta ) || empty( $meta['sha256'] ) ) {
-			return null;
-		}
-		$meta['xml'] = (string) file_get_contents( $p['xml'] );
+		$meta        = $r['meta'];
+		$meta['xml'] = (string) $r['xml'];
 		return $meta;
 	}
 

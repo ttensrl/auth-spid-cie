@@ -3,6 +3,7 @@
 namespace WpSpidCie\Settings;
 
 use WpSpidCie\Cert\CertificateManager;
+use WpSpidCie\Cert\KeyVault;
 use WpSpidCie\Idp\CieMetadata;
 use WpSpidCie\Idp\Registry;
 use WpSpidCie\Idp\TestIdps;
@@ -42,6 +43,7 @@ class AdminPage {
 		add_action( 'admin_post_wpspid_cert_download', array( $this, 'post_cert_download' ) );
 		add_action( 'admin_post_wpspid_refresh', array( $this, 'post_refresh' ) );
 		add_action( 'admin_post_wpspid_probe', array( $this, 'post_probe' ) );
+		add_action( 'admin_post_wpspid_encrypt_key', array( $this, 'post_encrypt_key' ) );
 		add_action( 'admin_post_wpspid_meta_snapshot', array( $this, 'post_meta_snapshot' ) );
 		add_action( 'admin_post_wpspid_meta_download', array( $this, 'post_meta_download' ) );
 	}
@@ -169,6 +171,17 @@ class AdminPage {
 		$this->guard( self::NONCE );
 		$probe = Requirements::probe( true );
 		$this->back( $probe['ok'] ? 'success' : 'error', $probe['ok'] ? __( 'Check passed: the server can generate and use certificates.', 'auth-spid-cie' ) : sprintf( /* translators: %s: list of problems found on the server. */ __( 'Check failed: %s', 'auth-spid-cie' ), implode( ' ', $probe['errors'] ) ) );
+	}
+
+	public function post_encrypt_key() {
+		$this->guard( self::NONCE );
+		$service = $this->service_from_post();
+		try {
+			CertificateManager::reseal( $service );
+		} catch ( \Exception $e ) {
+			$this->back( 'error', sprintf( /* translators: %s: technical error message. */ __( 'Not encrypted: %s', 'auth-spid-cie' ), $e->getMessage() ) );
+		}
+		$this->back( 'success', sprintf( /* translators: %s: SPID or CIE. */ __( 'The %s private key is now stored encrypted.', 'auth-spid-cie' ), strtoupper( $service ) ) );
 	}
 
 	public function post_meta_snapshot() {
@@ -394,11 +407,7 @@ class AdminPage {
 		submit_button( __( 'Check again', 'auth-spid-cie' ), 'link', 'submit', false );
 		echo '</form></td></tr>';
 		echo '<tr><td><strong>' . esc_html__( 'Data', 'auth-spid-cie' ) . '</strong></td><td>' . wp_kses(
-			sprintf(
-				/* translators: %s: path of the plugin data folder. */
-				__( 'Keys, certificates and registered metadata are stored in %s. <strong>Deleting the plugin loses them</strong> (and the certificate registered with AgID/CIE must be redone): download the certificate and the registered metadata first.', 'auth-spid-cie' ),
-				'<code>' . esc_html( CertificateManager::get_storage_dir() ) . '</code>'
-			),
+			__( 'Keys, certificates and registered metadata are stored in the <strong>WordPress database</strong> (not in files), so updating or reinstalling the plugin does not lose them. They are kept when the plugin is deleted unless <code>WPSPID_REMOVE_DATA_ON_UNINSTALL</code> is set. Database backups contain the private key: to store it encrypted, define <code>WPSPID_SECRET</code> in wp-config.php.', 'auth-spid-cie' ),
 			array( 'code' => array(), 'strong' => array() )
 		) . '</td></tr>';
 		foreach ( array( 'spid' => 'SPID', 'cie' => 'CIE' ) as $service => $label ) {
@@ -439,6 +448,9 @@ class AdminPage {
 					)
 				);
 			}
+			if ( $info ) {
+				$this->render_key_state( $service );
+			}
 			if ( ! $missing && $info ) {
 				echo '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener">' . esc_html( sprintf( /* translators: %s: SPID or CIE. */ __( '%s metadata', 'auth-spid-cie' ), $label ) ) . '</a> <code>' . esc_html( $url ) . '</code>';
 				$this->render_snapshot( $service );
@@ -452,6 +464,24 @@ class AdminPage {
 		wp_nonce_field( self::NONCE );
 		submit_button( __( 'Refresh Identity Provider list', 'auth-spid-cie' ), 'secondary', 'submit', false );
 		echo '</form></div>';
+	}
+
+	private function render_key_state( $service ) {
+		$state = CertificateManager::key_state( $service );
+		$st    = $state['status'];
+		if ( KeyVault::S_OK === $st ) {
+			echo '<span style="color:#00a32a">&#10003; ' . esc_html__( 'Private key stored encrypted (WPSPID_SECRET).', 'auth-spid-cie' ) . '</span><br />';
+		} elseif ( KeyVault::S_PLAIN === $st ) {
+			echo '<span style="color:#996800">&#9888; ' . esc_html__( 'Private key stored in the database WITHOUT encryption: database backups contain it. To encrypt it, define WPSPID_SECRET in wp-config.php (see the documentation).', 'auth-spid-cie' ) . '</span><br />';
+		} elseif ( KeyVault::S_PLAIN_PENDING === $st ) {
+			echo '<span style="color:#996800">&#9888; ' . esc_html__( 'WPSPID_SECRET is defined but the private key is still stored without encryption.', 'auth-spid-cie' ) . '</span> ';
+			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline"><input type="hidden" name="action" value="wpspid_encrypt_key" /><input type="hidden" name="service" value="' . esc_attr( $service ) . '" />';
+			wp_nonce_field( self::NONCE );
+			submit_button( __( 'Encrypt now', 'auth-spid-cie' ), 'link', 'submit', false );
+			echo '</form><br />';
+		} else {
+			echo '<span style="color:#b32d2e">&#10007; ' . esc_html( KeyVault::message( $st ) ) . '</span><br />';
+		}
 	}
 
 	private function render_snapshot( $service ) {

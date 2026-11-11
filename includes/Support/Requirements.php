@@ -119,13 +119,6 @@ class Requirements {
 		}
 
 		if ( ! $errors ) {
-			$dir = CertificateManager::get_storage_dir();
-			if ( ! is_dir( $dir ) || ! wp_is_writable( $dir ) ) {
-				$errors[] = sprintf( /* translators: %s: folder path. */ __( 'The plugin data folder is not writable: %s', 'auth-spid-cie' ), $dir );
-			}
-		}
-
-		if ( ! $errors ) {
 			$subject = array(
 				'org_name'       => 'Probe',
 				'common_name'    => 'Probe',

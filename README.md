@@ -99,15 +99,15 @@ Con il tema attivo l'integrazione è automatica (`includes/Integrations/Theme.ph
 
 - Firma XML verificata sull'**elemento specifico** (Assertion): contro *signature wrapping*, ID duplicati, SHA-1, DOCTYPE/entità esterne. Gli attributi si leggono solo dall'Assertion firmata.
 - Richiesta e asserzione si consumano **una sola volta** (anti-replay). `Destination`, `Recipient`, `Audience`, livello di garanzia e tempi sono controllati.
-- La chiave privata sta in `data/` come file `.php` con guard `<?php exit; ?>`, permessi 0600, `.htaccess`, `index.php`. Il pannello non la mostra mai.
+- **Chiave privata e certificato stanno nel database** (opzioni di rete, `autoload=no`), non in file: niente da proteggere nel filesystem, funziona anche con filesystem in sola lettura. Se definisci `WPSPID_SECRET` in `wp-config.php` la chiave viene **cifrata con libsodium** (`secretbox`); senza, è salvata in chiaro e i backup del database la contengono. Il pannello non la mostra mai.
 - Gli attributi SAML sono sempre escapati in output.
-- **Aggiornare o reinstallare il plugin non cancella i dati** (`data/` viene messa al sicuro e rimessa). **Eliminare il plugin sì**: il certificato registrato va rifatto. Dettagli in [`docs/STORAGE.md`](docs/STORAGE.md).
+- **Aggiornare, reinstallare o rifare un deploy non cancella i dati**, perché non stanno nella cartella del plugin. Anche **eliminare il plugin** li lascia (certificato, chiave, metadata registrato e impostazioni) a meno che in `wp-config.php` ci sia `WPSPID_REMOVE_DATA_ON_UNINSTALL`: rifare la registrazione presso AgID/CIE costa. Se perdi `WPSPID_SECRET` la chiave cifrata è illeggibile e il certificato va rigenerato e ri-registrato. Dettagli in [`docs/STORAGE.md`](docs/STORAGE.md).
 
 ## Stato e limiti
 
 Cosa è verificato:
 
-- 31 + 138 test automatici (firma/verifica, validazione Response con casi di attacco, certificati, archiviazione, aggiornamento, interfaccia), su PHP 8.0, 8.2, 8.3 e 8.5.
+- 31 + 156 test automatici (firma/verifica, validazione Response con casi di attacco, certificati, archiviazione nel database e cifratura, migrazione, interfaccia), su PHP 8.0, 8.2, 8.3 e 8.5.
 - Metadata validati con `spid-sp-test` 1.2.18: **SPID 110 controlli, 0 falliti; CIE 85 controlli, 0 falliti**.
 - Reinstallazione vera su WordPress 7.1 con `wp plugin install --force`: i dati restano identici.
 

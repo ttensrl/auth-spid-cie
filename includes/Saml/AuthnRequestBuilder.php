@@ -29,11 +29,11 @@ class AuthnRequestBuilder {
 	public static function build( $idp_entity_id, $sso_url, $level = 2, $service = 'spid', $embed_signature = true ) {
 		$level = max( 1, min( 3, (int) $level ) );
 
-		$private_key = CertificateManager::get_private_key( $service );
-		$cert        = CertificateManager::get_certificate( $service );
-		if ( ! $private_key || ! $cert ) {
+		$cert = CertificateManager::get_certificate( $service );
+		if ( ! $cert ) {
 			throw new \Exception( 'Service Provider certificate or private key missing: unable to sign the request.' );
 		}
+		$private_key = CertificateManager::private_key_or_fail( $service ); // Spiega perche' la chiave non e' leggibile.
 
 		$entity_id     = Config::entity_id( $service );
 		$id            = 'wpspid_' . bin2hex( random_bytes( 16 ) );

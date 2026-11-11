@@ -11,145 +11,69 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class CertificateManager {
 
-	/**
-	 * Prima riga dei file della chiave privata. Se un web server servisse il file senza eseguirlo
-	 * si leggerebbe la chiave; eseguendolo (come avviene per qualunque .php) non stampa nulla.
-	 * Non e' cifratura: la protezione vera sono i permessi, .htaccess, index.php e il fatto che la
-	 * cartella non e' mai elencata. Non si cifra con i salt di WordPress: ruotarli (cosa che si fa
-	 * dopo un'intrusione) renderebbe la chiave illeggibile e farebbe perdere la registrazione SPID/CIE.
-	 */
-	const KEY_GUARD = "<?php exit; ?>\n";
+	/** Nome sicuro per l'opzione: solo [a-z0-9_]. */
+	private static function type( $type ) {
+		return preg_replace( '/[^a-z0-9_]/', '', strtolower( (string) $type ) );
+	}
 
-	/**
-	 * Cartella di default dei dati: dentro il plugin. NB: l'aggiornamento di un plugin cancella la
-	 * sua cartella, vedi \WpSpidCie\Support\DataPreserver che la mette al riparo.
-	 *
-	 * @return string
-	 */
-	public static function default_storage_dir() {
-		return WPSPID_PLUGIN_DIR . 'data/';
+	/** Record salvato ({v, key, cert, saved}) o null. Non avvia la migrazione. */
+	public static function record( $type = 'spid' ) {
+		$r = Storage::get( 'cert_' . self::type( $type ) );
+		return ( $r && isset( $r['key'], $r['cert'] ) ) ? $r : null;
 	}
 
 	/**
-	 * Get the directory for private keys, certificates and registered metadata.
-	 * `WPSPID_PRIVATE_DIR` (wp-config.php) la sposta altrove, per chi puo' usare un percorso privato.
+	 * Salva chiave (cifrata se WPSPID_SECRET e' definita) e certificato, poi li rilegge e verifica.
 	 *
-	 * @return string Absolute path with trailing slash.
+	 * @throws \Exception Se non si riesce a salvare o la verifica fallisce (in tal caso il record viene tolto).
 	 */
-	public static function get_storage_dir() {
-		if ( defined( 'WPSPID_PRIVATE_DIR' ) && WPSPID_PRIVATE_DIR ) {
-			$dir = trailingslashit( WPSPID_PRIVATE_DIR );
-		} else {
-			$dir = self::default_storage_dir();
+	public static function store( $type, $key_pem, $cert_pem ) {
+		$name = 'cert_' . self::type( $type );
+		$prev = Storage::get( $name );
+		Storage::set( $name, array(
+			'v'     => 1,
+			'key'   => KeyVault::seal( $key_pem ),
+			'cert'  => trim( $cert_pem ) . "\n",
+			'saved' => time(),
+		) );
+		$back = self::record( $type );
+		$open = $back ? KeyVault::open( $back['key'] ) : array( 'key' => false );
+		$ok   = $back && false !== $open['key'] && trim( $open['key'] ) === trim( $key_pem ) && trim( $back['cert'] ) === trim( $cert_pem );
+		if ( ! $ok ) {
+			if ( $prev ) {
+				Storage::set( $name, $prev );
+			} else {
+				Storage::delete( $name );
+			}
+			throw new \Exception( 'Unable to save the certificate or private key.' );
 		}
+	}
 
-		if ( ! file_exists( $dir ) ) {
-			wp_mkdir_p( $dir );
-		}
-		// Defence in depth (Apache 2.4 and 2.2 syntax; nginx ignores .htaccess, see the PHP guard on keys).
-		if ( ! file_exists( $dir . '.htaccess' ) ) {
-			file_put_contents(
-				$dir . '.htaccess',
-				"<IfModule mod_authz_core.c>\nRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\nOrder deny,allow\nDeny from all\n</IfModule>\n"
-			);
-		}
-		if ( ! file_exists( $dir . 'index.php' ) ) {
-			file_put_contents( $dir . 'index.php', '<?php // Silence is golden.' );
-		}
-		// Se il plugin vive in un repository git, chiavi e metadata non devono finirci per errore.
-		if ( ! file_exists( $dir . '.gitignore' ) ) {
-			file_put_contents( $dir . '.gitignore', "*\n!.htaccess\n!index.php\n!.gitignore\n" );
-		}
-
-		return $dir;
+	/** Cancella certificato e chiave dal database. */
+	public static function delete( $type ) {
+		Storage::delete( 'cert_' . self::type( $type ) );
 	}
 
 	/**
-	 * Get paths for SPID or CIE cert/key.
-	 *
-	 * @param string $type 'spid' or 'cie'
-	 * @return array
-	 */
-	public static function get_paths( $type = 'spid' ) {
-		$dir = self::get_storage_dir();
-		return array(
-			'key'  => $dir . $type . '-sp.key.php',
-			'cert' => $dir . $type . '-sp.crt',
-		);
-	}
-
-	/**
-	 * Vecchia posizione (chiave in chiaro in uploads/): raggiungibile da web su nginx.
-	 *
-	 * @return string|null
-	 */
-	private static function legacy_dir() {
-		if ( ( defined( 'WPSPID_PRIVATE_DIR' ) && WPSPID_PRIVATE_DIR ) || ! function_exists( 'wp_upload_dir' ) ) {
-			return null;
-		}
-		$u = wp_upload_dir();
-		return empty( $u['basedir'] ) ? null : trailingslashit( $u['basedir'] ) . 'wp-spid-cie-private/';
-	}
-
-	/**
-	 * Sposta chiave e certificato dalla vecchia posizione (stessa copia, formato nuovo) e cancella la
-	 * chiave in chiaro. Non tocca nulla se la coppia non e' coerente.
+	 * Vecchia posizione (chiave in chiaro in uploads/) o cartella data/: vedi Migrator.
 	 *
 	 * @param string $type
 	 * @param string $legacy_dir Cartella con {type}-sp.key e {type}-sp.crt.
-	 * @return bool True se migrati.
+	 * @return bool True se migrati nel database.
 	 */
 	public static function migrate_legacy( $type, $legacy_dir ) {
-		$legacy_dir = trailingslashit( $legacy_dir );
-		$old_key    = $legacy_dir . $type . '-sp.key';
-		$old_cert   = $legacy_dir . $type . '-sp.crt';
-		if ( ! is_file( $old_key ) || ! is_file( $old_cert ) ) {
-			return false;
-		}
-		$paths = self::get_paths( $type );
-		if ( file_exists( $paths['key'] ) ) {
-			return false; // Gia' presente nel formato nuovo: non sovrascrivere.
-		}
-		$key  = file_get_contents( $old_key );
-		$cert = file_get_contents( $old_cert );
-		$pkey = $key ? openssl_pkey_get_private( $key ) : false;
-		$x509 = $cert ? openssl_x509_read( $cert ) : false;
-		if ( ! $pkey || ! $x509 || ! openssl_x509_check_private_key( $x509, $pkey ) ) {
-			return false;
-		}
-		self::write_files( $paths, $key, $cert );
-		if ( trim( (string) self::get_private_key_raw( $paths['key'] ) ) !== trim( $key ) ) {
-			wp_delete_file( $paths['key'] );
-			return false;
-		}
-		wp_delete_file( $old_key );
-		wp_delete_file( $old_cert );
-		return true;
-	}
-
-	/** Migra una sola volta per richiesta, se esiste ancora la vecchia posizione. */
-	private static function maybe_migrate( $type ) {
-		static $done = array();
-		if ( isset( $done[ $type ] ) ) {
-			return;
-		}
-		$done[ $type ] = true;
-		$legacy        = self::legacy_dir();
-		if ( $legacy && is_file( $legacy . $type . '-sp.key' ) ) {
-			self::migrate_legacy( $type, $legacy );
-		}
+		return Migrator::migrate_type( self::type( $type ), trailingslashit( $legacy_dir ) . self::type( $type ) . '-sp.key', trailingslashit( $legacy_dir ) . self::type( $type ) . '-sp.crt', false );
 	}
 
 	/**
-	 * Check if cert and key exist for a given type.
+	 * Check if cert and key exist for a given type (anche se la chiave non e' leggibile: vedi key_state()).
 	 *
 	 * @param string $type
 	 * @return bool
 	 */
 	public static function exists( $type = 'spid' ) {
-		self::maybe_migrate( $type );
-		$paths = self::get_paths( $type );
-		return file_exists( $paths['key'] ) && file_exists( $paths['cert'] );
+		Migrator::maybe_run();
+		return null !== self::record( $type );
 	}
 
 	/**
@@ -159,35 +83,63 @@ class CertificateManager {
 	 * @return string|false
 	 */
 	public static function get_certificate( $type = 'spid' ) {
-		self::maybe_migrate( $type );
-		$paths = self::get_paths( $type );
-		if ( file_exists( $paths['cert'] ) ) {
-			return file_get_contents( $paths['cert'] );
-		}
-		return false;
+		Migrator::maybe_run();
+		$r = self::record( $type );
+		return $r ? $r['cert'] : false;
 	}
 
 	/**
-	 * Get private key content (the PHP guard is stripped).
+	 * Stato della chiave privata.
+	 *
+	 * @return array {status:string (KeyVault::S_*), readable:bool}
+	 */
+	public static function key_state( $type = 'spid' ) {
+		Migrator::maybe_run();
+		$r = self::record( $type );
+		if ( ! $r ) {
+			return array( 'status' => KeyVault::S_MISSING, 'readable' => false );
+		}
+		$open = KeyVault::open( $r['key'] );
+		return array( 'status' => $open['status'], 'readable' => false !== $open['key'] );
+	}
+
+	/**
+	 * Get private key content, or false if missing/unreadable (never a wrong key).
 	 *
 	 * @param string $type
 	 * @return string|false
 	 */
 	public static function get_private_key( $type = 'spid' ) {
-		self::maybe_migrate( $type );
-		$paths = self::get_paths( $type );
-		return self::get_private_key_raw( $paths['key'] );
+		Migrator::maybe_run();
+		$r = self::record( $type );
+		if ( ! $r ) {
+			return false;
+		}
+		$open = KeyVault::open( $r['key'] );
+		return $open['key'];
 	}
 
-	private static function get_private_key_raw( $file ) {
-		if ( ! is_file( $file ) ) {
-			return false;
+	/**
+	 * Chiave privata o eccezione con la causa (cifratura, costante assente/diversa, ...).
+	 *
+	 * @throws \Exception
+	 */
+	public static function private_key_or_fail( $type = 'spid' ) {
+		$state = self::key_state( $type );
+		if ( ! $state['readable'] ) {
+			throw new \Exception( KeyVault::message( $state['status'] ) );
 		}
-		$content = file_get_contents( $file );
-		if ( false === $content ) {
-			return false;
+		return self::get_private_key( $type );
+	}
+
+	/** Salva di nuovo la chiave (cifrandola se ora c'e' WPSPID_SECRET). @throws \Exception */
+	public static function reseal( $type = 'spid' ) {
+		$cert = self::get_certificate( $type );
+		$key  = self::get_private_key( $type );
+		if ( ! $cert || ! $key ) {
+			throw new \Exception( KeyVault::message( self::key_state( $type )['status'] ) );
 		}
-		return 0 === strpos( $content, self::KEY_GUARD ) ? substr( $content, strlen( self::KEY_GUARD ) ) : $content;
+		self::store( $type, $key, $cert );
 	}
 
 	/**
@@ -208,12 +160,12 @@ class CertificateManager {
 		\WpSpidCie\Support\Requirements::assert_can_generate();
 
 		list( $key_out, $cert_out ) = self::build_material( $type, $subject, $days, 3072 );
-		self::write_files( self::get_paths( $type ), $key_out, $cert_out );
+		self::store( $type, $key_out, $cert_out );
 		return true;
 	}
 
 	/**
-	 * Genera chiave e certificato SENZA scriverli su disco (usato anche dal probe dei requisiti).
+	 * Genera chiave e certificato SENZA salvarli (usato anche dal probe dei requisiti).
 	 *
 	 * @param string $type    'spid' or 'cie'.
 	 * @param array  $subject Vedi generate().
@@ -237,7 +189,7 @@ class CertificateManager {
 		if ( false === $cnf ) {
 			throw new \Exception( 'Unable to create the temporary OpenSSL configuration file.' );
 		}
-		chmod( $cnf, 0600 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- permessi restrittivi sulla chiave privata: WP_Filesystem non e' adatto
+		// tempnam() crea il file con permessi 0600.
 		file_put_contents( $cnf, $conf );
 
 		try {
@@ -346,23 +298,8 @@ class CertificateManager {
 			throw new \Exception( 'The private key does not match the certificate.' );
 		}
 
-		self::write_files( self::get_paths( $type ), $private_key, $certificate );
+		self::store( $type, $private_key, $certificate );
 
 		return true;
-	}
-
-	/**
-	 * Write key/cert with restrictive permissions from the start (no 0644 window for the key).
-	 */
-	private static function write_files( array $paths, $key_pem, $cert_pem ) {
-		$old = umask( 0077 );
-		$k   = file_put_contents( $paths['key'], self::KEY_GUARD . $key_pem );
-		umask( $old );
-		$c = file_put_contents( $paths['cert'], $cert_pem );
-		if ( false === $k || false === $c ) {
-			throw new \Exception( 'Unable to save the certificate or private key.' );
-		}
-		chmod( $paths['key'], 0600 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- permessi restrittivi sulla chiave privata: WP_Filesystem non e' adatto
-		chmod( $paths['cert'], 0644 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- permessi restrittivi sulla chiave privata: WP_Filesystem non e' adatto
 	}
 }

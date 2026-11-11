@@ -2,40 +2,73 @@
 
 ## Dove
 
-Tutto in **`wp-content/plugins/auth-spid-cie/data/`** (percorso alternativo: costante `WPSPID_PRIVATE_DIR` in `wp-config.php`, per chi può usare una cartella privata).
+Tutto nel **database di WordPress**, non in file. Il plugin non scrive nulla nella propria cartella né in `uploads/`.
 
-| File | Contenuto | Pubblico? |
-|---|---|---|
-| `spid-sp.key.php`, `cie-sp.key.php` | chiave privata dell'SP (permessi 0600) | **No**, vedi protezione |
-| `spid-sp.crt`, `cie-sp.crt` | certificato | sì (è pubblico per natura) |
-| `registered-spid.xml/.json`, `registered-cie.*` | metadata registrato presso AgID/CIE + hash, data, nota | sì (è pubblico per natura) |
-| `.htaccess`, `index.php`, `.gitignore` | protezione e esclusione da git | – |
+| Opzione | Contenuto |
+|---|---|
+| `wpspid_cert_spid`, `wpspid_cert_cie` | chiave privata dell'SP (cifrata o no, vedi sotto) e certificato |
+| `wpspid_registered_spid`, `wpspid_registered_cie` | metadata registrato presso AgID/CIE + hash, data, nota |
+| `wpspid_options` | impostazioni dell'ente (ragione sociale, contatti, livelli, ...), per sito |
 
-## Come è protetta la chiave
+Sono opzioni **di rete** (`get_site_option`/`update_site_option`): in un multisite stanno in `sitemeta` e c'è **un solo certificato per tutta la rete**, come prima; in un sito singolo WordPress le scrive in `options` con `autoload = 'no'`, quindi la chiave non viene caricata a ogni richiesta. Le pagine pubbliche non la leggono mai: serve solo per firmare AuthnRequest e metadata.
 
-1. Il file è un `.php` che inizia con `<?php exit; ?>`: se un web server lo esegue (e per un `.php` lo fa) non stampa nulla. **Verificato su nginx**: `GET .../data/spid-sp.key.php` → HTTP 200, 0 byte.
-2. `.htaccess` (Apache 2.4 e 2.2) nega l'accesso alla cartella; nginx lo ignora ma blocca comunque `/.ht*` nella configurazione standard.
-3. `index.php` evita l'elenco della cartella; permessi 0600 sui file della chiave.
-4. `data/.gitignore` esclude tutto tranne i tre file di protezione.
-5. Non si cifra con i salt di WordPress: ruotarli (si fa dopo un'intrusione) renderebbe la chiave illeggibile e farebbe perdere la registrazione.
+Conseguenza: **aggiornare, reinstallare, copiare la cartella del plugin o fare un deploy con `rsync --delete` non fa perdere niente.** Un filesystem in sola lettura non è un problema.
 
-Limite: la protezione 1 vale se il server esegue PHP in quella cartella. Non esporre mai `data/` con regole che servono i `.php` come testo.
+## Chiave privata: in chiaro o cifrata
 
-## Aggiornamento del plugin: i dati sopravvivono
+Per default la chiave è salvata **in chiaro** nel database: chi ha un dump o un backup del database ha la chiave. Se questo non va bene, **cifrala** definendo in `wp-config.php` un segreto lungo e casuale:
 
-WordPress aggiorna un plugin **cancellando la cartella precedente**. `Support/DataPreserver` copia `data/` in `wp-content/upgrade/wpspid-preserve-…` prima, la rimette dopo e verifica che i file siano identici (hash e permessi).
+```php
+define( 'WPSPID_SECRET', 'incolla-qui-il-valore-generato' );
+```
 
-- Copre: aggiornamenti, **upload con "sostituisci quello attuale"**, `wp plugin install --force`.
-- Se la copia di sicurezza non riesce, l'operazione viene **annullata**.
-- Se il ripristino non riesce, la copia resta sul disco e compare un avviso con il percorso.
-- Testato: unit test e una vera reinstallazione con `wp plugin install --force` su WordPress 7.1 / PHP 8.2 (dati identici).
+Generarlo: `php -r "echo bin2hex(random_bytes(32));"`. Conservalo con le altre credenziali (gestore di password, backup separato dal database).
 
-## Cosa si perde
+- Cifratura: **libsodium** (`sodium_crypto_secretbox`, XSalsa20-Poly1305), nonce casuale a ogni salvataggio; la chiave di cifratura si deriva dal segreto con `sodium_crypto_generichash` e un contesto fisso del plugin. Serve l'estensione PHP `sodium` (inclusa in PHP dalla 7.2).
+- Il valore salvato porta un marcatore di versione e di "cifrato sì/no" e l'impronta breve della chiave derivata. Così il plugin sa distinguere i casi qui sotto e **non restituisce mai una chiave sbagliata**.
+- **Non si cifra con i salt di WordPress**: ruotarli (si fa dopo un'intrusione) renderebbe la chiave illeggibile.
 
-- **Eliminare il plugin** dalla schermata Plugin: la cartella viene cancellata con tutto. Il certificato registrato con AgID/CIE va rifatto. L'admin lo ricorda nella riga "Dati". Prima: scaricare certificato e metadata registrato.
-- **Deploy con `rsync --delete`** o reupload via FTP della cartella del plugin: aggiungere `--exclude data/` oppure usare `WPSPID_PRIVATE_DIR`.
-- Aggiornamento interrotto a metà (server che va giù): la copia in `wp-content/upgrade/` può essere recuperata a mano.
-- I backup di sito (Duplicator e simili) includono la cartella e quindi la chiave: trattarli come segreti.
+| Situazione | Cosa succede |
+|---|---|
+| Chiave cifrata e `WPSPID_SECRET` corretta | tutto funziona; il pannello dice "cifrata" |
+| Chiave in chiaro e costante **non** definita | funziona; il pannello avvisa che i backup contengono la chiave |
+| Chiave in chiaro e costante definita **dopo** | funziona; il pannello avvisa e offre **Cifra ora** (si cifra anche al prossimo salvataggio) |
+| Chiave cifrata e costante **assente** | chiave illeggibile: login e metadata di quel servizio disattivati, avviso in admin |
+| Chiave cifrata e costante **diversa** | idem (l'impronta non corrisponde) |
+| Dato alterato o formato sconosciuto | idem, "dato danneggiato" |
+| Costante definita ma manca l'estensione `sodium` | bloccato, con il messaggio dedicato: abilita l'estensione o togli la costante |
+
+### Se perdi o cambi `WPSPID_SECRET`
+
+La chiave cifrata **non si può recuperare**. L'avviso in admin lo dice chiaramente: *ripristina la costante `WPSPID_SECRET` originale oppure rigenera il certificato*. Rigenerare significa che **il metadata cambia e va ri-registrato presso AgID/CIE**. Il plugin non prova mai a indovinare il segreto.
+
+### Backup del database
+
+Includono certificato e chiave. Con `WPSPID_SECRET` e il segreto fuori dal dump, il backup da solo non basta a usare la chiave. Senza, **trattali come segreti**.
+
+## Migrazione dalle versioni precedenti (file)
+
+Le prime versioni tenevano i dati in `wp-content/plugins/auth-spid-cie/data/` (chiave `*.key.php`, certificato, metadata registrato) e, ancora prima, in `uploads/wp-spid-cie-private/`. Al primo caricamento il plugin li sposta nel database, in questo ordine:
+
+1. copia nel database;
+2. **rilegge** e verifica che chiave e certificato corrispondano (`openssl_x509_check_private_key`) e che il metadata registrato sia identico;
+3. **solo dopo** cancella i vecchi file e la cartella vuota (anche `.htaccess`, `index.php`, `.gitignore` di protezione).
+
+Se un passo fallisce (coppia non valida, un certificato diverso già nel database, salvataggio non riuscito) **non cancella niente**: i file restano dove sono e il pannello mostra un avviso con il motivo. Si può rilanciare: è idempotente. Se `WPSPID_SECRET` è definita al momento della migrazione, la chiave entra nel database già cifrata.
+
+Chi aggiorna da una versione che usava `data/`: l'aggiornamento di WordPress rimette `data/` al suo posto (lo faceva la vecchia versione) e la nuova la migra.
+
+## Eliminazione del plugin
+
+`uninstall.php` cancella **sempre** i dati temporanei: sessioni dei cittadini, richieste in corso, anti-replay, elenco IdP in cache, esito della verifica OpenSSL.
+
+Per default **non** cancella certificato, chiave, metadata registrato e impostazioni dell'ente: rifare la registrazione presso AgID/CIE costa giorni, e un'eliminazione per errore o una reinstallazione non deve farla perdere. Per cancellare tutto:
+
+```php
+define( 'WPSPID_REMOVE_DATA_ON_UNINSTALL', true );
+```
+
+(in `wp-config.php`, prima di eliminare il plugin). In multisite vale per tutta la rete.
 
 ## Requisiti del server (OpenSSL)
 

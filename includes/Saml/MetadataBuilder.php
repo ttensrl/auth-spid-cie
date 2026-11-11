@@ -36,10 +36,10 @@ class MetadataBuilder {
 
 		$entity_id = Config::entity_id( $service );
 		$cert      = CertificateManager::get_certificate( $service );
-		$key       = CertificateManager::get_private_key( $service );
-		if ( ! $cert || ! $key ) {
+		if ( ! $cert ) {
 			throw new \Exception( 'Certificate or private key missing: unable to sign the metadata.' );
 		}
+		$key = CertificateManager::private_key_or_fail( $service ); // Spiega perche' la chiave non e' leggibile.
 
 		$org_name    = self::first( $c['org_name'], get_bloginfo( 'name' ) );
 		$org_display = self::first( $c['org_display_name'], $org_name );

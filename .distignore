@@ -8,8 +8,5 @@ docs/screenshots
 .gitignore
 .distignore
 README.md
-data/*.pem
-data/*.key.php
-data
 .wordpress-org
 languages/*.pot
