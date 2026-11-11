@@ -285,7 +285,7 @@ msgstr "Reindirizzamento verso il gestore di identità in corso..."
 
 #: includes/Saml/Bindings.php:78
 msgid "Click here to continue"
-msgstr "Clicca qui per proseguire"
+msgstr "Continua"
 
 #: includes/Settings/AdminPage.php:53 includes/Settings/AdminPage.php:54
 #: includes/Settings/AdminPage.php:285
@@ -431,7 +431,7 @@ msgstr "Attiva l'accesso"
 
 #: includes/Settings/AdminPage.php:299
 msgid "Enable the login/ACS routes (the metadata always remains reachable)"
-msgstr "Abilita le rotte di login/ACS (il metadata resta sempre raggiungibile)"
+msgstr "Abilita gli endpoint di login e ACS (il metadata resta sempre raggiungibile)"
 
 #: includes/Settings/AdminPage.php:300
 msgid "Production environment"
@@ -824,7 +824,7 @@ msgstr "Metadata %s"
 
 #: includes/Settings/AdminPage.php:460
 msgid "Routes"
-msgstr "Rotte"
+msgstr "Endpoint"
 
 #: includes/Settings/AdminPage.php:460
 msgid "Logout:"
