@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Schema, defaults and sanitization of the plugin options (`wpspid_options`).
  *
- * The fields mirror what the spid-cie-php setup asks for (see ANALISI_E_ISTRUZIONI.md §4.5/§4.7).
+ * The fields mirror what the spid-cie-php setup asks for (see the SPID technical rules).
  */
 class OptionsManager {
 

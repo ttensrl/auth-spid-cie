@@ -23,3 +23,12 @@ if ( ! function_exists( 'wp_is_writable' ) ) {
 if ( ! function_exists( 'wp_strip_all_tags' ) ) {
 	function wp_strip_all_tags( $s ) { return trim( strip_tags( $s ) ); }
 }
+if ( ! function_exists( 'wp_parse_url' ) ) {
+	function wp_parse_url( $url, $component = -1 ) { return parse_url( $url, $component ); }
+}
+if ( ! function_exists( 'wp_basename' ) ) {
+	function wp_basename( $path ) { return basename( $path ); }
+}
+if ( ! function_exists( 'sanitize_file_name' ) ) {
+	function sanitize_file_name( $name ) { return preg_replace( '/[^A-Za-z0-9._-]/', '', $name ); }
+}

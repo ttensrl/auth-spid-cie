@@ -30,6 +30,11 @@
 .wpspid__idps li:last-child { border-bottom: 0; }
 .wpspid__idps a, .wpspid__idp-off { display: block; padding: .6rem .25rem; color: var(--wpspid-bg); font-weight: 600; text-decoration: none; }
 .wpspid__idps a:hover, .wpspid__idps a:focus-visible { background: color-mix(in srgb, var(--wpspid-bg) 8%, #fff); text-decoration: underline; }
+/* Con i loghi: griglia di riquadri, nome nell'alt. */
+.wpspid__idps:has(.wpspid__idp-logo) { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+.wpspid__idps:has(.wpspid__idp-logo) li { border: 1px solid #d5dbe1; border-radius: 4px; }
+.wpspid__idps:has(.wpspid__idp-logo) a { display: flex; align-items: center; justify-content: center; min-height: 3.5rem; padding: .5rem .75rem; }
+.wpspid__idp-logo { display: block; max-width: 100%; height: 1.75rem; width: auto; object-fit: contain; }
 .wpspid__idp-off { color: #6c757d; font-weight: 400; }
 .wpspid__help { margin: 0; font-size: .875rem; }
 .wpspid__help a { color: var(--wpspid-bg); }

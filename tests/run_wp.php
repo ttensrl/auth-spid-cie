@@ -368,9 +368,10 @@ ok( false !== strpos( $h, '<details' ) && false === strpos( $h, '<details open' 
 foreach ( array( 'https://www.spid.gov.it"', 'https://www.spid.gov.it/richiedi-spid', 'https://www.spid.gov.it/serve-aiuto' ) as $link ) {
 	ok( false !== strpos( $h, $link ), "help link present: $link" );
 }
-ok( 0 === preg_match( '#<a [^>]*>\s*https?://#', $h ), 'an IdP whose registry display name is a URL is listed by its proper name' );
+ok( 0 === preg_match( '#<a [^>]*>\s*https?://#', $h ) && 0 === preg_match( '#alt="https?://#', $h ), 'an IdP whose registry display name is a URL is listed by its proper name' );
+ok( false === strpos( $h, 'jsdelivr' ) && false !== strpos( $h, 'assets/img/idp/spid-idp-posteid.svg' ), 'IdP logos come from the plugin, never from an external CDN' );
 $firsts = array();
-for ( $i = 0; $i < 40; $i++ ) { preg_match( '#<li[^>]*><a[^>]*>([^<]+)#', Buttons::spid_button(), $m ); $firsts[ $m[1] ] = 1; }
+for ( $i = 0; $i < 40; $i++ ) { preg_match( '#<li[^>]*><a[^>]*>(?:<img[^>]*alt="([^"]+)"|([^<]+))#', Buttons::spid_button(), $m ); $firsts[ '' !== $m[1] ? $m[1] : $m[2] ] = 1; }
 ok( count( $firsts ) >= 2, 'IdP order is random (AgID guidelines): ' . count( $firsts ) . ' different first entries in 40 renders' );
 ok( false !== strpos( Buttons::spid_button( array( 'open' => true ) ), '<details open' ), 'the list can be rendered open (dedicated login page)' );
 ok( false !== strpos( Buttons::spid_button( array( 'return' => 'https://sp.example.it/area/' ) ), 'returnTo=' . rawurlencode( 'https://sp.example.it/area/' ) ), 'returnTo is carried over' );

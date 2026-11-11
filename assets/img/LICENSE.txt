@@ -5,3 +5,7 @@ spid-logo-bianco.svg, spid-logo-blu.svg
 
 Logo CIE: NON incluso. Il repository italia/cie-graphics non dichiara una licenza.
   Il tema puo' fornirlo con il filtro `wpspid_logo_url` (vedi README).
+
+Loghi dei gestori d'identita' (assets/img/idp/): da https://github.com/italia/spid-sp-access-button
+  (distribuiti da AgID per l'uso nei pulsanti SPID). Sono marchi registrati delle rispettive aziende
+  e vanno usati solo per indicare il gestore, nel rispetto delle linee guida SPID.

@@ -54,6 +54,20 @@ class Buttons {
 		return ( '' === $d || preg_match( '#^https?://#i', $d ) ) ? $idp['name'] : $d;
 	}
 
+	/**
+	 * Logo del gestore, solo da file inclusi nel plugin (nessuna richiesta a CDN esterni):
+	 * il registro AgID indica un URL, ne usiamo solo il nome file se esiste in assets/img/idp/.
+	 *
+	 * @return string URL del logo o stringa vuota.
+	 */
+	private static function idp_logo( array $idp ) {
+		$file = isset( $idp['logo'] ) ? sanitize_file_name( wp_basename( (string) wp_parse_url( $idp['logo'], PHP_URL_PATH ) ) ) : '';
+		if ( ! preg_match( '/^spid-idp-[a-z0-9-]+\.svg$/', $file ) || ! file_exists( WPSPID_PLUGIN_DIR . 'assets/img/idp/' . $file ) ) {
+			return '';
+		}
+		return WPSPID_PLUGIN_URL . 'assets/img/idp/' . $file;
+	}
+
 	private static function usable( array $idp ) {
 		return ! empty( $idp['certs'] ) && ! empty( $idp['sso'] );
 	}
@@ -82,8 +96,10 @@ class Buttons {
 		$items = '';
 		foreach ( $idps as $idp ) {
 			$name = self::label( $idp );
+			$logo = self::idp_logo( $idp );
+			$face = '' !== $logo ? '<img class="wpspid__idp-logo" src="' . esc_url( $logo ) . '" alt="' . esc_attr( $name ) . '" loading="lazy" />' : esc_html( $name );
 			if ( self::usable( $idp ) ) {
-				$items .= '<li><a href="' . esc_url( self::login_url( $idp['entity_id'], $args['level'], $args['return'] ) ) . '" rel="nofollow">' . esc_html( $name ) . '</a></li>';
+				$items .= '<li><a href="' . esc_url( self::login_url( $idp['entity_id'], $args['level'], $args['return'] ) ) . '" rel="nofollow">' . $face . '</a></li>';
 			} else {
 				$items .= '<li><span class="wpspid__idp-off" aria-disabled="true">' . esc_html( $name ) . ' <small>(' . esc_html__( 'not available', 'auth-spid-cie' ) . ')</small></span></li>';
 			}

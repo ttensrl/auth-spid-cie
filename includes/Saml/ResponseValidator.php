@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Validates the SAML Response received on the ACS.
  *
  * Rules derived from the "SPID CUSTOM" patches of spid-cie-php (see
- * ANALISI_E_ISTRUZIONI.md §4.3). Data is read ONLY from the Assertion whose
+ * the SPID technical rules). Data is read ONLY from the Assertion whose
  * signature has been verified against the IdP certificates.
  */
 class ResponseValidator {
