@@ -1,8 +1,8 @@
-# wp-spid-cie — Analisi e istruzioni di sviluppo
+# auth-spid-cie — Analisi e istruzioni di sviluppo
 
 > Documento destinato a un'altra AI (o sviluppatore) che dovrà implementare il plugin.
 > Contiene: obiettivo, analisi dei due progetti in `inspirations/`, cosa va replicato, architettura proposta, piano di lavoro, checklist di sicurezza e test, domande aperte.
-> Data analisi: 2026-11-08. Percorso plugin: `wp-content/plugins/wp-spid-cie/`.
+> Data analisi: 2026-11-08. Percorso plugin: `wp-content/plugins/auth-spid-cie/`.
 
 ---
 
@@ -54,7 +54,7 @@ Opzioni salvate (`wp_auth_gov_proxy_options`): `wp_auth_gov_spid_enabled`, `wp_a
 
 1. **Dipendenza totale da SimpleSAMLphp esterno** (percorso libreria arbitrario → `require_once` di un path scelto in admin).
 2. `isAuthenticated()` **ritorna `true` se il plugin è disabilitato**: semantica pericolosa per un controllo d'accesso. Il nuovo plugin deve ritornare `false`/non applicare gate quando disabilitato, in modo esplicito.
-3. Scrive file nella directory del plugin (`resources/spid-idps.json`, e `spid-idps.json` nel *cwd* a ogni render del bottone!) e fa `file_get_contents` su URL remoto **a ogni render** → lento, fragile, non scrivibile su molti hosting. Usare `wp_remote_get` + cache (option/transient/file in `wp-content/uploads/wp-spid-cie/`) + refresh via WP-Cron.
+3. Scrive file nella directory del plugin (`resources/spid-idps.json`, e `spid-idps.json` nel *cwd* a ogni render del bottone!) e fa `file_get_contents` su URL remoto **a ogni render** → lento, fragile, non scrivibile su molti hosting. Usare `wp_remote_get` + cache (option/transient/file in `wp-content/uploads/auth-spid-cie/`) + refresh via WP-Cron.
 4. Output HTML **non escapato** (`organization_name`, `logo_uri` concatenati in attributi) → XSS; handler `onerror` con virgolette rotte; usare `esc_attr/esc_url/esc_html`.
 5. Percorsi hardcoded `/govauth/...` per CSS/JS/immagini dei bottoni; jQuery `$` globale inserito inline; usare `plugins_url()` + `wp_enqueue_script/style`.
 6. `insertCIEButton()` ha **`?idp=CIE TEST` hardcoded** ignorando la modalità produzione.
@@ -221,8 +221,8 @@ Attributi SPID standard: `spidCode, name, familyName, placeOfBirth, countyOfBirt
 ### 5.1 Struttura file
 
 ```
-wp-spid-cie/
-├─ wp-spid-cie.php              # header plugin, costanti, autoloader PSR-4 minimale, hook attivazione/disattivazione
+auth-spid-cie/
+├─ auth-spid-cie.php              # header plugin, costanti, autoloader PSR-4 minimale, hook attivazione/disattivazione
 ├─ uninstall.php                # rimuove options, transient, file generati (con conferma opzionale)
 ├─ readme.txt                   # formato WordPress.org
 ├─ LICENSE / NOTICE             # attribuzioni (Apache-2.0 spid-cie-php, asset AgID)
@@ -326,7 +326,7 @@ Analisi dei temi in `wp-content/themes/`:
 
 ## 6. Piano di lavoro (ordine consigliato, un commit/milestone per fase)
 
-1. **Scaffold**: file principale, autoloader, costanti, requisiti, uninstall, i18n (text domain `wp-spid-cie`, stringhe in italiano).
+1. **Scaffold**: file principale, autoloader, costanti, requisiti, uninstall, i18n (text domain `auth-spid-cie`, stringhe in italiano).
 2. **Xml + firma**: `XmlSecurity`, `Signer`, `SignatureVerifier` con **test unitari** (round-trip firma→verifica; vettori negativi: digest alterato, wrapping, SHA-1, Reference errato). Non procedere finché non passano.
 3. **Certificate manager** + pagina Certificati.
 4. **Registry IdP** (SPID JSON + CIE XML) con cache/cron; usare `resources/spid-idps.json` come fixture offline.
@@ -395,7 +395,7 @@ Rispettare le linee guida grafiche AgID (testo "Entra con SPID", dimensioni, ord
 
 ## 11. Istruzioni operative per l'AI esecutrice
 
-- Lavora **solo** dentro `wp-content/plugins/wp-spid-cie/` (escluso `inspirations/`, sola lettura). Non modificare il resto di WordPress.
+- Lavora **solo** dentro `wp-content/plugins/auth-spid-cie/` (escluso `inspirations/`, sola lettura). Non modificare il resto di WordPress.
 - Non introdurre Composer, `vendor/`, npm obbligatorio a runtime, né download di codice da internet in esecuzione.
 - Rispetta le WordPress Coding Standards (sicurezza prima di tutto: `ABSPATH` guard in ogni file, escaping, nonce, capability).
 - Procedi per fasi (§6), consegnando test per ogni fase prima di passare alla successiva. La fase 2 (firma/verifica XML) è la più rischiosa: scrivi prima i test negativi.
@@ -445,7 +445,7 @@ Verificati su PHP 8.0, 8.3 e 8.5. I test sulla firma sono stati controllati con 
 - `Saml/AuthnRequestBuilder`, `Bindings` (Redirect firmato in query, POST con XMLDSig), `MetadataBuilder` (firmato, base: manca ContactPerson/estensioni). **Testato**.
 - `Idp/Registry` (SPID, con snapshot di fallback), `Idp/CieMetadata`, `Cert/CertificateManager`, `State/RequestStore` (consumo singolo), `State/ReplayCache`, `Auth/SessionGate`, `Http/Router`, `Api.php`.
 
-- **Archiviazione dati e requisiti** (vedi `docs/STORAGE.md`): chiavi, certificati e metadata registrato in `data/` dentro il plugin (override: `WPSPID_PRIVATE_DIR`); chiave in `*.key.php` con guard `<?php exit; ?>` (verificato su nginx: 200, 0 byte); `Support/DataPreserver` mette `data/` al riparo da aggiornamento e reinstallazione (**provato con un vero `wp plugin install --force`**, che prima del fix cancellava i dati: `hook_extra` non ha la chiave `plugin` nelle reinstallazioni, serve `upgrader_source_selection`); `Support/Requirements` (probe pratico di OpenSSL all'attivazione e nell'admin, blocca generazione/login se fallisce); `Saml/MetadataSnapshot` (metadata registrato + avviso se cambia, confronto normalizzato). Migrazione automatica dalla vecchia cartella in `uploads/`. **Testato**: 102 test (`run_wp.php`) su PHP 8.0/8.2/8.3/8.5. **Non testato**: un vero hosting condiviso con `disable_functions` o OpenSSL limitato (simulato con override nei test); aggiornamento da zip con deploy `rsync --delete` e eliminazione del plugin (dati persi per scelta, documentato); pulsanti admin di download/salvataggio snapshot solo come render, non cliccati in un browser.
+- **Archiviazione dati e requisiti** (vedi `docs/STORAGE.md`): chiavi, certificati e metadata registrato in `data/` dentro il plugin (override: `WPSPID_PRIVATE_DIR`); chiave in `*.key.php` con guard `<?php exit; ?>` (verificato su nginx: 200, 0 byte); `Support/DataPreserver` mette `data/` al riparo da aggiornamento e reinstallazione (**provato con un vero `wp plugin install --force`**, che prima del fix cancellava i dati: `hook_extra` non ha la chiave `plugin` nelle reinstallazioni, serve `upgrader_source_selection`); `Support/Requirements` (probe pratico di OpenSSL all'attivazione e nell'admin, blocca generazione/login se fallisce); `Saml/MetadataSnapshot` (metadata registrato + avviso se cambia, confronto normalizzato). Migrazione automatica dalla vecchia cartella in `uploads/`. **Testato**: 138 test (`run_wp.php`) su PHP 8.0/8.2/8.3/8.5. **Non testato**: un vero hosting condiviso con `disable_functions` o OpenSSL limitato (simulato con override nei test); aggiornamento da zip con deploy `rsync --delete` e eliminazione del plugin (dati persi per scelta, documentato); pulsanti admin di download/salvataggio snapshot solo come render, non cliccati in un browser.
 
 ### 12.4 Cosa NON è ancora fatto (prossimi passi, in ordine)
 

@@ -85,17 +85,17 @@ class Buttons {
 			if ( self::usable( $idp ) ) {
 				$items .= '<li><a href="' . esc_url( self::login_url( $idp['entity_id'], $args['level'], $args['return'] ) ) . '" rel="nofollow">' . esc_html( $name ) . '</a></li>';
 			} else {
-				$items .= '<li><span class="wpspid__idp-off" aria-disabled="true">' . esc_html( $name ) . ' <small>(non disponibile)</small></span></li>';
+				$items .= '<li><span class="wpspid__idp-off" aria-disabled="true">' . esc_html( $name ) . ' <small>(' . esc_html__( 'not available', 'auth-spid-cie' ) . ')</small></span></li>';
 			}
 		}
 
 		return '<div class="wpspid wpspid--spid"><details' . ( $args['open'] ? ' open' : '' ) . ' class="wpspid__menu">'
-			. '<summary class="wpspid__btn">' . self::img( 'spid' ) . '<span>' . esc_html__( 'Entra con SPID', 'wp-spid-cie' ) . '</span></summary>'
-			. '<div class="wpspid__panel"><p class="wpspid__lead">' . esc_html__( 'Scegli il tuo gestore di identità SPID', 'wp-spid-cie' ) . '</p>'
+			. '<summary class="wpspid__btn">' . self::img( 'spid' ) . '<span>' . esc_html__( 'Log in with SPID', 'auth-spid-cie' ) . '</span></summary>'
+			. '<div class="wpspid__panel"><p class="wpspid__lead">' . esc_html__( 'Choose your SPID identity provider', 'auth-spid-cie' ) . '</p>'
 			. '<ul class="wpspid__idps">' . $items . '</ul>'
-			. '<p class="wpspid__help"><a href="' . esc_url( self::URL_INFO ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Maggiori informazioni su SPID', 'wp-spid-cie' ) . '</a>'
-			. ' &middot; <a href="' . esc_url( self::URL_REQUEST ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Non hai SPID?', 'wp-spid-cie' ) . '</a>'
-			. ' &middot; <a href="' . esc_url( self::URL_HELP ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Serve aiuto?', 'wp-spid-cie' ) . '</a></p>'
+			. '<p class="wpspid__help"><a href="' . esc_url( self::URL_INFO ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'More information about SPID', 'auth-spid-cie' ) . '</a>'
+			. ' &middot; <a href="' . esc_url( self::URL_REQUEST ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Don\'t have SPID?', 'auth-spid-cie' ) . '</a>'
+			. ' &middot; <a href="' . esc_url( self::URL_HELP ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Need help?', 'auth-spid-cie' ) . '</a></p>'
 			. '</div></details></div>';
 	}
 
@@ -114,12 +114,12 @@ class Buttons {
 		$idp  = $idps ? $idps[0] : array();
 		self::enqueue();
 
-		$label = '<span>' . esc_html__( 'Entra con CIE', 'wp-spid-cie' ) . '</span>';
+		$label = '<span>' . esc_html__( 'Log in with CIE', 'auth-spid-cie' ) . '</span>';
 		if ( $idp && self::usable( $idp ) ) {
 			return '<div class="wpspid wpspid--cie"><a class="wpspid__btn" href="' . esc_url( self::login_url( $idp['entity_id'], $args['level'], $args['return'] ) ) . '" rel="nofollow">' . self::img( 'cie' ) . $label . '</a></div>';
 		}
 		return '<div class="wpspid wpspid--cie"><span class="wpspid__btn wpspid__btn--off" role="link" aria-disabled="true">' . self::img( 'cie' ) . $label . '</span>'
-			. '<p class="wpspid__note">' . esc_html__( 'Accesso con CIE temporaneamente non disponibile.', 'wp-spid-cie' ) . '</p></div>';
+			. '<p class="wpspid__note">' . esc_html__( 'Login with CIE is temporarily unavailable.', 'auth-spid-cie' ) . '</p></div>';
 	}
 
 	/**
@@ -135,8 +135,8 @@ class Buttons {
 			return '';
 		}
 		self::enqueue();
-		return '<div class="wpspid wpspid--user"><p>' . esc_html__( 'Hai effettuato l\'accesso come', 'wp-spid-cie' ) . ' <strong>' . esc_html( $name ) . '</strong>.</p>'
-			. '<a class="wpspid__btn wpspid__btn--ghost" href="' . esc_url( $logout_url ) . '">' . esc_html__( 'Esci', 'wp-spid-cie' ) . '</a></div>';
+		return '<div class="wpspid wpspid--user"><p>' . esc_html__( 'You are logged in as', 'auth-spid-cie' ) . ' <strong>' . esc_html( $name ) . '</strong>.</p>'
+			. '<a class="wpspid__btn wpspid__btn--ghost" href="' . esc_url( $logout_url ) . '">' . esc_html__( 'Log out', 'auth-spid-cie' ) . '</a></div>';
 	}
 
 	/**
@@ -158,8 +158,8 @@ class Buttons {
 		} else {
 			$body .= self::spid_button( array( 'open' => true, 'return' => $args['return'] ) ) . self::cie_button( array( 'return' => $args['return'] ) );
 		}
-		return '<section class="wpspid-page"><div class="wpspid-page__box"><h1 class="wpspid-page__title">' . esc_html__( 'Accedi con SPID o CIE', 'wp-spid-cie' ) . '</h1>'
-			. '<p class="wpspid-page__intro">' . esc_html__( 'Usa la tua identità digitale per accedere ai servizi online. Non ti chiediamo di creare un account: useremo solo i dati necessari per identificarti.', 'wp-spid-cie' ) . '</p>'
+		return '<section class="wpspid-page"><div class="wpspid-page__box"><h1 class="wpspid-page__title">' . esc_html__( 'Log in with SPID or CIE', 'auth-spid-cie' ) . '</h1>'
+			. '<p class="wpspid-page__intro">' . esc_html__( 'Use your digital identity to access online services. We do not ask you to create an account: we will only use the data needed to identify you.', 'auth-spid-cie' ) . '</p>'
 			. $body . '</div></section>';
 	}
 }

@@ -36,7 +36,7 @@ class Bindings {
 		$private_key = CertificateManager::get_private_key( $service );
 		$signature   = '';
 		if ( ! $private_key || ! openssl_sign( $query, $signature, $private_key, OPENSSL_ALGO_SHA256 ) ) {
-			throw new \Exception( 'Impossibile firmare la richiesta (HTTP-Redirect).' );
+			throw new \Exception( 'Unable to sign the request (HTTP-Redirect).' );
 		}
 		$query .= '&Signature=' . rawurlencode( base64_encode( $signature ) );
 
@@ -65,17 +65,17 @@ class Bindings {
 		<html>
 		<head>
 			<meta charset="utf-8">
-			<title>Reindirizzamento in corso...</title>
+			<title><?php echo esc_html__( 'Redirecting...', 'auth-spid-cie' ); ?></title>
 		</head>
 		<body onload="document.forms[0].submit();">
-			<p>Reindirizzamento verso il provider di identità in corso...</p>
+			<p><?php echo esc_html__( 'Redirecting to the identity provider...', 'auth-spid-cie' ); ?></p>
 			<form method="post" action="<?php echo esc_url( $sso_url ); ?>">
 				<input type="hidden" name="SAMLRequest" value="<?php echo esc_attr( $base64 ); ?>" />
 				<?php if ( ! empty( $relay_state ) ) : ?>
 					<input type="hidden" name="RelayState" value="<?php echo esc_attr( $relay_state ); ?>" />
 				<?php endif; ?>
 				<noscript>
-					<input type="submit" value="Clicca qui per proseguire" />
+					<input type="submit" value="<?php echo esc_attr__( 'Click here to continue', 'auth-spid-cie' ); ?>" />
 				</noscript>
 			</form>
 		</body>

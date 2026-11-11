@@ -45,7 +45,7 @@ function apply_filters( $tag, $value, ...$rest ) { return isset( $GLOBALS['filte
 function wp_enqueue_style( $h ) { $GLOBALS['enqueued'][] = $h; }
 function get_template_directory() { return $GLOBALS['tmp'] . '/theme'; }
 function get_template_directory_uri() { return 'https://sp.example.it/wp-content/themes/wp-pa-theme'; }
-define( 'WPSPID_PLUGIN_URL', 'https://sp.example.it/wp-content/plugins/wp-spid-cie/' );
+define( 'WPSPID_PLUGIN_URL', 'https://sp.example.it/wp-content/plugins/auth-spid-cie/' );
 
 use WpSpidCie\Cert\CertificateManager;
 use WpSpidCie\Saml\AuthnRequestBuilder;
@@ -174,7 +174,7 @@ $partial = OptionsManager::sanitize( array( 'cie_level' => 1 ) );
 ok( true === $partial['enabled'] && 'Keep me' === $partial['org_name'], 'programmatic partial update keeps stored values' );
 $GLOBALS['opts'] = array();
 $miss = OptionsManager::missing_for_metadata( array(), 'spid' );
-ok( in_array( 'entityID', $miss, true ) && in_array( 'Codice IPA', $miss, true ), 'missing_for_metadata lists what to fill' );
+ok( in_array( 'entityID', $miss, true ) && in_array( 'IPA code', $miss, true ), 'missing_for_metadata lists what to fill' );
 ok( array() === OptionsManager::missing_for_metadata( $base + array( 'sp_type' => 'public' ), 'spid' ), 'complete public data -> nothing missing' );
 
 echo "== Test IdPs\n";
@@ -196,7 +196,7 @@ ok( 1 === count( $e ) && false !== strpos( $e[0], 'openssl' ), 'missing openssl 
 $e = Requirements::check( array( 'functions' => array( 'openssl_pkey_new' ) ) );
 ok( count( $e ) >= 1 && false !== strpos( implode( ' ', $e ), 'openssl_csr_new' ), 'disabled OpenSSL functions are reported by name' );
 $p = Requirements::probe( true, array( 'tmp_writable' => false ) );
-ok( false === $p['ok'] && false !== stripos( implode( ' ', $p['errors'] ), 'temporanea' ), 'probe fails when the temp dir is not writable' );
+ok( false === $p['ok'] && false !== stripos( implode( ' ', $p['errors'] ), 'temporary folder' ), 'probe fails when the temp dir is not writable' );
 ok( false === Requirements::cached()['ok'], 'failed probe is cached too (so the plugin stays blocked)' );
 $p = Requirements::probe( true, array( 'functions' => array() ) );
 ok( false === $p['ok'] && count( $p['errors'] ) >= 1, 'probe fails when OpenSSL functions are unavailable' );
@@ -265,18 +265,18 @@ ok( empty( $GLOBALS['opts']['wpspid_preserved_path'] ), 'updates of other plugin
 // Reinstallazione / upload con "sostituisci": WordPress NON passa la chiave 'plugin' agli hook.
 // (Trovato con un vero `wp plugin install --force`, che aveva cancellato i dati.)
 $inst = $GLOBALS['tmp'] . '/inst';
-mkdir( $inst . '/wp-spid-cie', 0777, true );
-file_put_contents( $inst . '/wp-spid-cie/wp-spid-cie.php', '<?php // Plugin Name: WP SPID CIE' );
+mkdir( $inst . '/auth-spid-cie', 0777, true );
+file_put_contents( $inst . '/auth-spid-cie/auth-spid-cie.php', '<?php // Plugin Name: Auth SPID CIE' );
 $data_old = $GLOBALS['tmp'] . '/inst-data';
 mkdir( $data_old, 0777, true );
 file_put_contents( $data_old . '/spid-sp.key.php', "<?php exit; ?>\nSECRET2" );
 chmod( $data_old . '/spid-sp.key.php', 0600 );
 DataPreserver::$test_dir    = $data_old;
-DataPreserver::$test_folder = 'wp-spid-cie';
+DataPreserver::$test_folder = 'auth-spid-cie';
 $GLOBALS['opts']['wpspid_preserved_path'] = null;
 $install_extra = array( 'type' => 'plugin', 'action' => 'install' );
-$sel = DataPreserver::on_source_selection( $inst . '/wp-spid-cie', '/x', null, $install_extra );
-ok( $inst . '/wp-spid-cie' === $sel, 'source selection returns the source unchanged' );
+$sel = DataPreserver::on_source_selection( $inst . '/auth-spid-cie', '/x', null, $install_extra );
+ok( $inst . '/auth-spid-cie' === $sel, 'source selection returns the source unchanged' );
 ok( ! empty( $GLOBALS['opts']['wpspid_preserved_path'] ) && is_dir( $GLOBALS['opts']['wpspid_preserved_path'] ), 'reinstall (hook_extra without "plugin") triggers the backup' );
 DataPreserver::remove_dir( $data_old );
 $new_plugin = $GLOBALS['tmp'] . '/inst-newplugin';
@@ -293,13 +293,36 @@ file_put_contents( $inst . '/another-plugin/another.php', '<?php' );
 DataPreserver::on_source_selection( $inst . '/another-plugin', '/x', null, $install_extra );
 ok( empty( $GLOBALS['opts']['wpspid_preserved_path'] ), 'installing a different plugin is ignored' );
 mkdir( $inst . '/no-main', 0777, true );
-rename( $inst . '/no-main', $inst . '/wp-spid-cie-x' );
-DataPreserver::on_source_selection( $inst . '/wp-spid-cie-x', '/x', null, $install_extra );
+rename( $inst . '/no-main', $inst . '/auth-spid-cie-x' );
+DataPreserver::on_source_selection( $inst . '/auth-spid-cie-x', '/x', null, $install_extra );
 ok( empty( $GLOBALS['opts']['wpspid_preserved_path'] ), 'a folder with another name is ignored' );
-DataPreserver::on_source_selection( $inst . '/wp-spid-cie', '/x', null, array( 'type' => 'theme', 'action' => 'install' ) );
+DataPreserver::on_source_selection( $inst . '/auth-spid-cie', '/x', null, array( 'type' => 'theme', 'action' => 'install' ) );
 ok( empty( $GLOBALS['opts']['wpspid_preserved_path'] ), 'themes are ignored' );
+// Installazione fallita: la copia di sicurezza non deve restare orfana se la cartella dati e' ancora al suo posto.
+// (Trovato in una prova vera: l'aggiornamento e' fallito prima di cancellare la cartella e la copia e' rimasta.)
+$GLOBALS['opts']['wpspid_preserved_path'] = null;
+mkdir( $data_old, 0777, true );
+file_put_contents( $data_old . '/k.key.php', 'SECRET3' );
+DataPreserver::on_source_selection( $inst . '/auth-spid-cie', '/x', null, $install_extra );
+$stale = $GLOBALS['opts']['wpspid_preserved_path'];
+ok( ! empty( $stale ) && is_dir( $stale ), 'backup made before the install' );
+$err = new WP_Error();
+ok( $err === DataPreserver::on_install_result( $err, $install_extra ), 'install result is passed through untouched' );
+ok( empty( $GLOBALS['opts']['wpspid_preserved_path'] ) && ! is_dir( $stale ), 'failed install with the data folder still in place: the useless backup is removed' );
+DataPreserver::on_source_selection( $inst . '/auth-spid-cie', '/x', null, $install_extra );
+$kept = $GLOBALS['opts']['wpspid_preserved_path'];
+DataPreserver::remove_dir( $data_old ); // l'aggiornamento ha gia' cancellato la cartella
+DataPreserver::on_install_result( new WP_Error(), $install_extra );
+ok( ! empty( $GLOBALS['opts']['wpspid_preserved_path'] ) && is_dir( $kept ), 'failed install after the data folder was wiped: the backup is KEPT' );
+DataPreserver::remove_dir( $kept );
+$GLOBALS['opts']['wpspid_preserved_path'] = null;
+$ok_result = array( 'destination' => '/x' );
+ok( $ok_result === DataPreserver::on_install_result( $ok_result, $install_extra ), 'a successful install is left alone (the restore happens in post_install)' );
+DataPreserver::reset_state();
+@mkdir( $data_old, 0777, true );
+file_put_contents( $data_old . '/k', 'x' );
 DataPreserver::$test_backup_root = '/proc/forbidden';
-$res = DataPreserver::on_source_selection( $inst . '/wp-spid-cie', '/x', null, $install_extra );
+$res = DataPreserver::on_source_selection( $inst . '/auth-spid-cie', '/x', null, $install_extra );
 ok( $res instanceof WP_Error && empty( $GLOBALS['opts']['wpspid_preserved_path'] ), 'if the backup cannot be made the installation is aborted (WP_Error)' );
 DataPreserver::$test_backup_root = null;
 DataPreserver::$test_dir         = null;
@@ -338,7 +361,7 @@ use WpSpidCie\Ui\Buttons;
 $GLOBALS['opts']['wpspid_options'] = array( 'enabled' => 1, 'spid_enabled' => 1, 'cie_enabled' => 1, 'cie_level' => 2, 'test_demo' => 0 );
 $n_spid = count( \WpSpidCie\Idp\IdpRepository::get_spid_idps() );
 $h = Buttons::spid_button();
-ok( false !== strpos( $h, 'Entra con SPID' ), 'SPID button says "Entra con SPID"' );
+ok( false !== strpos( $h, 'Log in with SPID' ), 'SPID button says "Log in with SPID"' );
 ok( $n_spid === substr_count( $h, '<li' ), "all $n_spid SPID identity providers are listed" );
 ok( false !== strpos( $h, 'wpspid=login' ) && false !== strpos( $h, 'level=2' ) && false !== strpos( $h, rawurlencode( 'https://posteid.poste.it' ) ), 'each IdP links to the login route with level 2 and its (encoded) entityID' );
 ok( false !== strpos( $h, '<details' ) && false === strpos( $h, '<details open' ), 'list is collapsed by default (native details/summary, no JavaScript)' );
@@ -352,10 +375,10 @@ ok( count( $firsts ) >= 2, 'IdP order is random (AgID guidelines): ' . count( $f
 ok( false !== strpos( Buttons::spid_button( array( 'open' => true ) ), '<details open' ), 'the list can be rendered open (dedicated login page)' );
 ok( false !== strpos( Buttons::spid_button( array( 'return' => 'https://sp.example.it/area/' ) ), 'returnTo=' . rawurlencode( 'https://sp.example.it/area/' ) ), 'returnTo is carried over' );
 $c = Buttons::cie_button();
-ok( false !== strpos( $c, 'Entra con CIE' ) && false !== strpos( $c, 'aria-disabled="true"' ) && false === strpos( $c, 'href=' ), 'CIE button is disabled (no link) when the CIE IdP has no certificates yet' );
+ok( false !== strpos( $c, 'Log in with CIE' ) && false !== strpos( $c, 'aria-disabled="true"' ) && false === strpos( $c, 'href=' ), 'CIE button is disabled (no link) when the CIE IdP has no certificates yet' );
 set_transient( 'wpspid_cie_test', array( 'entity_id' => 'https://cie.example/idp', 'name' => 'CIE (test)', 'display_name' => 'CIE', 'logo' => '', 'type' => 'cie', 'certs' => array( 'CERT' ), 'sso' => array( array( 'binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST', 'location' => 'https://cie.example/sso' ) ), 'slo' => array() ) );
 $c = Buttons::cie_button();
-ok( false !== strpos( $c, 'Entra con CIE' ) && false !== strpos( $c, 'level=2' ) && false !== strpos( $c, rawurlencode( 'https://cie.example/idp' ) ) && false === strpos( $c, 'aria-disabled' ), 'CIE button links to the login route with the configured level once the IdP is usable' );
+ok( false !== strpos( $c, 'Log in with CIE' ) && false !== strpos( $c, 'level=2' ) && false !== strpos( $c, rawurlencode( 'https://cie.example/idp' ) ) && false === strpos( $c, 'aria-disabled' ), 'CIE button links to the login route with the configured level once the IdP is usable' );
 ok( '' === Buttons::logo( 'cie' ), 'no CIE logo is bundled (cie-graphics has no declared licence)' );
 ok( false !== strpos( Buttons::logo( 'spid' ), 'assets/img/' ), 'the SPID logo (CC0) is bundled with the plugin' );
 $GLOBALS['filters']['wpspid_logo_url'] = function ( $url, $service ) { return 'cie' === $service ? 'https://theme.example/cie.svg' : $url; };
@@ -371,7 +394,7 @@ $GLOBALS['opts']['wpspid_options'] = array( 'enabled' => 1, 'spid_enabled' => 0,
 ok( '' === Buttons::spid_button() && '' !== Buttons::cie_button(), 'SPID can be switched off independently of CIE' );
 $GLOBALS['opts']['wpspid_options'] = array( 'enabled' => 1, 'spid_enabled' => 1, 'cie_enabled' => 1, 'test_demo' => 0 );
 $pg = Buttons::page();
-ok( false !== strpos( $pg, '<h1' ) && false !== strpos( $pg, '<details open' ) && false !== strpos( $pg, 'Entra con CIE' ), 'login page: title, open SPID list and CIE button' );
+ok( false !== strpos( $pg, '<h1' ) && false !== strpos( $pg, '<details open' ) && false !== strpos( $pg, 'Log in with CIE' ), 'login page: title, open SPID list and CIE button' );
 ok( in_array( 'wpspid-ui', $GLOBALS['enqueued'], true ), 'the stylesheet is enqueued only when something is rendered' );
 $GLOBALS['opts'] = array();
 

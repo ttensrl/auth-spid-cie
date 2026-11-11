@@ -1,14 +1,17 @@
 <?php
 /**
- * Plugin Name: WP SPID CIE
- * Plugin URI:  https://github.com/luca-terribili/wp-spid-cie
- * Description: Plugin autonomo per l'autenticazione SPID e CIE (Service Provider SAML2) senza dipendenze esterne.
+ * Plugin Name: Auth SPID CIE
+ * Plugin URI:  https://github.com/ttensrl/auth-spid-cie
+ * Description: Standalone SPID and CIE login (SAML 2.0 Service Provider) with no external dependencies.
  * Version:     0.1.0
  * Author:      Luca Terribili
  * Author URI:  https://lucaterribili.it
  * License:     GPL-3.0-or-later
- * Text Domain: wp-spid-cie
+ * Text Domain: auth-spid-cie
  * Domain Path: /languages
+ * Requires at least: 6.0
+ * Requires PHP: 8.0
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -48,7 +51,8 @@ function wpspid_check_requirements() {
 	$errors = array();
 
 	if ( version_compare( PHP_VERSION, '8.0.0', '<' ) ) {
-		$errors[] = sprintf( __( 'Il plugin richiede PHP 8.0 o superiore. La tua versione attuale è %s.', 'wp-spid-cie' ), PHP_VERSION );
+		/* translators: %s: current PHP version. */
+		$errors[] = sprintf( __( 'The plugin requires PHP 8.0 or higher. Your current version is %s.', 'auth-spid-cie' ), PHP_VERSION );
 	}
 
 	// Estensioni e funzioni OpenSSL (anche quelle disattivate dall'hosting con disable_functions).
@@ -68,7 +72,7 @@ register_activation_hook( __FILE__, function() {
 	if ( ! empty( $errors ) ) {
 		deactivate_plugins( plugin_basename( __FILE__ ) );
 		wp_die(
-			'<p><strong>Il plugin SPID/CIE non può essere attivato su questo server.</strong></p><ul><li>' . implode( '</li><li>', array_map( 'esc_html', $errors ) ) . '</li></ul><p>Chiedi al provider di abilitare l\'estensione PHP openssl e le sue funzioni.</p>',
+			'<p><strong>' . esc_html__( 'The SPID/CIE plugin cannot be activated on this server.', 'auth-spid-cie' ) . '</strong></p><ul><li>' . implode( '</li><li>', array_map( 'esc_html', $errors ) ) . '</li></ul><p>' . esc_html__( 'Ask your hosting provider to enable the PHP openssl extension and its functions.', 'auth-spid-cie' ) . '</p>',
 			'',
 			array( 'back_link' => true )
 		);
@@ -84,7 +88,8 @@ register_activation_hook( __FILE__, function() {
 require_once WPSPID_PLUGIN_DIR . 'includes/Api.php';
 
 add_action( 'plugins_loaded', function() {
-	load_plugin_textdomain( 'wp-spid-cie', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+	// Bundled translations (it_IT); loaded before any message is built.
+	load_plugin_textdomain( 'auth-spid-cie', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' ); // phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- ships it_IT for installs outside wordpress.org
 
 	if ( ! empty( wpspid_check_requirements() ) ) {
 		add_action( 'admin_notices', function() {

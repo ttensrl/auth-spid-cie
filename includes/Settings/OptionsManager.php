@@ -17,28 +17,28 @@ class OptionsManager {
 	/** All SPID attributes with the default selection of spid-php (+ label). */
 	public static function attributes_catalog() {
 		return array(
-			'spidCode'             => array( 'Codice identificativo SPID', false ),
-			'name'                 => array( 'Nome', true ),
-			'familyName'           => array( 'Cognome', true ),
-			'placeOfBirth'         => array( 'Luogo di nascita', false ),
-			'countyOfBirth'        => array( 'Provincia di nascita', false ),
-			'dateOfBirth'          => array( 'Data di nascita', true ),
-			'gender'               => array( 'Sesso', false ),
-			'companyName'          => array( 'Ragione sociale', false ),
-			'registeredOffice'     => array( 'Sede legale', false ),
-			'fiscalNumber'         => array( 'Codice fiscale', true ),
-			'ivaCode'              => array( 'Partita IVA', false ),
-			'idCard'               => array( 'Documento d\'identità', false ),
-			'expirationDate'       => array( 'Scadenza documento', false ),
-			'mobilePhone'          => array( 'Telefono cellulare', false ),
-			'email'                => array( 'Email', true ),
-			'address'              => array( 'Indirizzo di residenza', false ),
-			'digitalAddress'       => array( 'PEC / domicilio digitale', false ),
-			'domicileStreetAddress' => array( 'Domicilio: via', false ),
-			'domicilePostalCode'   => array( 'Domicilio: CAP', false ),
-			'domicileMunicipality' => array( 'Domicilio: comune', false ),
-			'domicileProvince'     => array( 'Domicilio: provincia', false ),
-			'domicileNation'       => array( 'Domicilio: nazione', false ),
+			'spidCode'             => array( __( 'SPID identification code', 'auth-spid-cie' ), false ),
+			'name'                 => array( __( 'First name', 'auth-spid-cie' ), true ),
+			'familyName'           => array( __( 'Last name', 'auth-spid-cie' ), true ),
+			'placeOfBirth'         => array( __( 'Place of birth', 'auth-spid-cie' ), false ),
+			'countyOfBirth'        => array( __( 'County of birth', 'auth-spid-cie' ), false ),
+			'dateOfBirth'          => array( __( 'Date of birth', 'auth-spid-cie' ), true ),
+			'gender'               => array( __( 'Gender', 'auth-spid-cie' ), false ),
+			'companyName'          => array( __( 'Company name', 'auth-spid-cie' ), false ),
+			'registeredOffice'     => array( __( 'Registered office', 'auth-spid-cie' ), false ),
+			'fiscalNumber'         => array( __( 'Tax code', 'auth-spid-cie' ), true ),
+			'ivaCode'              => array( __( 'VAT number', 'auth-spid-cie' ), false ),
+			'idCard'               => array( __( 'ID document', 'auth-spid-cie' ), false ),
+			'expirationDate'       => array( __( 'Document expiry date', 'auth-spid-cie' ), false ),
+			'mobilePhone'          => array( __( 'Mobile phone', 'auth-spid-cie' ), false ),
+			'email'                => array( __( 'Email', 'auth-spid-cie' ), true ),
+			'address'              => array( __( 'Residential address', 'auth-spid-cie' ), false ),
+			'digitalAddress'       => array( __( 'PEC / digital domicile', 'auth-spid-cie' ), false ),
+			'domicileStreetAddress' => array( __( 'Domicile: street', 'auth-spid-cie' ), false ),
+			'domicilePostalCode'   => array( __( 'Domicile: postal code', 'auth-spid-cie' ), false ),
+			'domicileMunicipality' => array( __( 'Domicile: municipality', 'auth-spid-cie' ), false ),
+			'domicileProvince'     => array( __( 'Domicile: province', 'auth-spid-cie' ), false ),
+			'domicileNation'       => array( __( 'Domicile: country', 'auth-spid-cie' ), false ),
 		);
 	}
 
@@ -174,7 +174,7 @@ class OptionsManager {
 			} elseif ( self::is_https_url( $eid ) ) {
 				$out['entity_id'] = $eid;
 			} else {
-				self::error( 'entity_id', 'L\'entityID deve essere un URL che inizia con https://' );
+				self::error( 'entity_id', __( 'The entityID must be a URL starting with https://', 'auth-spid-cie' ) );
 			}
 		}
 		if ( array_key_exists( 'org_url', $input ) ) {
@@ -182,7 +182,7 @@ class OptionsManager {
 			if ( '' === $url || self::is_https_url( $url ) || self::is_http_url( $url ) ) {
 				$out['org_url'] = $url;
 			} else {
-				self::error( 'org_url', 'L\'URL dell\'organizzazione non è valido.' );
+				self::error( 'org_url', __( 'The organization URL is not valid.', 'auth-spid-cie' ) );
 			}
 		}
 
@@ -190,7 +190,7 @@ class OptionsManager {
 			if ( array_key_exists( $key, $input ) ) {
 				$mail = function_exists( 'sanitize_email' ) ? sanitize_email( $input[ $key ] ) : trim( (string) $input[ $key ] );
 				if ( '' !== trim( (string) $input[ $key ] ) && ( '' === $mail || ! filter_var( $mail, FILTER_VALIDATE_EMAIL ) ) ) {
-					self::error( $key, 'Indirizzo email non valido.' );
+					self::error( $key, __( 'Invalid email address.', 'auth-spid-cie' ) );
 				} else {
 					$out[ $key ] = $mail;
 				}
@@ -248,7 +248,7 @@ class OptionsManager {
 				if ( self::is_https_url( $line ) ) {
 					$urls[] = $line;
 				} else {
-					self::error( 'test_idp_urls', 'URL di metadata ignorato (serve https://): ' . $line );
+					self::error( 'test_idp_urls', sprintf( /* translators: %s: the ignored URL. */ __( 'Metadata URL ignored (https:// required): %s', 'auth-spid-cie' ), $line ) );
 				}
 			}
 			$out['test_idp_urls'] = array_slice( array_values( array_unique( $urls ) ), 0, 5 );
@@ -260,9 +260,9 @@ class OptionsManager {
 			if ( '' === $xml ) {
 				$out['test_idp_xml'] = '';
 			} elseif ( strlen( $xml ) > 102400 ) {
-				self::error( 'test_idp_xml', 'Il metadata XML incollato è troppo grande.' );
+				self::error( 'test_idp_xml', __( 'The pasted XML metadata is too large.', 'auth-spid-cie' ) );
 			} elseif ( null === \WpSpidCie\Idp\IdpMetadata::parse( $xml ) ) {
-				self::error( 'test_idp_xml', 'Il metadata XML incollato non è valido (servono entityID, certificato di firma e SingleSignOnService).' );
+				self::error( 'test_idp_xml', __( 'The pasted XML metadata is not valid (entityID, signing certificate and SingleSignOnService are required).', 'auth-spid-cie' ) );
 			} else {
 				$out['test_idp_xml'] = $xml;
 			}
@@ -283,16 +283,16 @@ class OptionsManager {
 		$missing = array();
 		$need    = array(
 			'entity_id'     => 'entityID',
-			'org_name'      => 'Nome organizzazione',
-			'org_display_name' => 'Nome visualizzato',
-			'org_url'       => 'URL organizzazione',
-			'org_code'      => 'public' === $o['sp_type'] ? 'Codice IPA' : ( 'FiscalCode' === $o['org_code_type'] ? 'Codice fiscale' : 'Partita IVA' ),
-			'locality'      => 'Località',
-			'contact_email' => 'Email di contatto',
-			'contact_phone' => 'Telefono di contatto',
+			'org_name'      => __( 'Organization name', 'auth-spid-cie' ),
+			'org_display_name' => __( 'Display name', 'auth-spid-cie' ),
+			'org_url'       => __( 'Organization URL', 'auth-spid-cie' ),
+			'org_code'      => 'public' === $o['sp_type'] ? __( 'IPA code', 'auth-spid-cie' ) : ( 'FiscalCode' === $o['org_code_type'] ? __( 'Tax code', 'auth-spid-cie' ) : __( 'VAT number', 'auth-spid-cie' ) ),
+			'locality'      => __( 'Locality', 'auth-spid-cie' ),
+			'contact_email' => __( 'Contact email', 'auth-spid-cie' ),
+			'contact_phone' => __( 'Contact phone', 'auth-spid-cie' ),
 		);
 		if ( 'cie' === $service || 'private' === $o['sp_type'] ) {
-			$need['cie_fiscal_code'] = 'cie' === $service ? 'Codice fiscale (CIE)' : null;
+			$need['cie_fiscal_code'] = 'cie' === $service ? __( 'Tax code (CIE)', 'auth-spid-cie' ) : null;
 		}
 		foreach ( $need as $key => $label ) {
 			if ( null !== $label && '' === trim( (string) $o[ $key ] ) ) {
@@ -300,7 +300,7 @@ class OptionsManager {
 			}
 		}
 		if ( 'cie' === $service ) {
-			foreach ( array( 'cie_nace2' => 'Codice ATECO/NACE2', 'cie_municipality' => 'Codice ISTAT del comune', 'cie_province' => 'Sigla provincia' ) as $key => $label ) {
+			foreach ( array( 'cie_nace2' => __( 'ATECO / NACE2 code', 'auth-spid-cie' ), 'cie_municipality' => __( 'Municipality ISTAT code', 'auth-spid-cie' ), 'cie_province' => __( 'Province code', 'auth-spid-cie' ) ) as $key => $label ) {
 				if ( '' === trim( (string) $o[ $key ] ) ) {
 					$missing[] = $label;
 				}
@@ -308,11 +308,11 @@ class OptionsManager {
 		}
 		if ( 'spid' === $service && 'private' === $o['sp_type'] ) {
 			foreach ( array(
-				'fpa_id_codice' => 'Fatturazione: IdCodice', 'fpa_denominazione' => 'Fatturazione: denominazione',
-				'fpa_indirizzo' => 'Fatturazione: indirizzo', 'fpa_numero_civico' => 'Fatturazione: numero civico',
-				'fpa_cap' => 'Fatturazione: CAP', 'fpa_comune' => 'Fatturazione: comune',
-				'fpa_provincia' => 'Fatturazione: provincia', 'fpa_org_name' => 'Fatturazione: ragione sociale',
-				'fpa_email' => 'Fatturazione: email', 'fpa_phone' => 'Fatturazione: telefono',
+				'fpa_id_codice' => __( 'Billing: IdCodice', 'auth-spid-cie' ), 'fpa_denominazione' => __( 'Billing: company name', 'auth-spid-cie' ),
+				'fpa_indirizzo' => __( 'Billing: address', 'auth-spid-cie' ), 'fpa_numero_civico' => __( 'Billing: street number', 'auth-spid-cie' ),
+				'fpa_cap' => __( 'Billing: postal code', 'auth-spid-cie' ), 'fpa_comune' => __( 'Billing: municipality', 'auth-spid-cie' ),
+				'fpa_provincia' => __( 'Billing: province', 'auth-spid-cie' ), 'fpa_org_name' => __( 'Billing: legal name', 'auth-spid-cie' ),
+				'fpa_email' => __( 'Billing: email', 'auth-spid-cie' ), 'fpa_phone' => __( 'Billing: phone', 'auth-spid-cie' ),
 			) as $key => $label ) {
 				if ( '' === trim( (string) $o[ $key ] ) ) {
 					$missing[] = $label;
@@ -324,7 +324,7 @@ class OptionsManager {
 
 	private static function text( $value ) {
 		$value = is_scalar( $value ) ? (string) $value : '';
-		$value = function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $value ) : trim( strip_tags( $value ) );
+		$value = function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $value ) : trim( wp_strip_all_tags( $value ) );
 		return $value;
 	}
 

@@ -31,6 +31,11 @@ class DataPreserver {
 	public static $test_backup_root = null;
 	public static $test_folder      = null;
 
+	/** Dimentica lo stato della richiesta (processi lunghi come WP-CLI e test). */
+	public static function reset_state() {
+		self::$protected = false;
+	}
+
 	/** Una sola copia di sicurezza per richiesta (negli aggiornamenti scattano due filtri). */
 	private static $protected = false;
 
@@ -38,10 +43,12 @@ class DataPreserver {
 		// Aggiornamento di un plugin gia' installato: hook_extra ha la chiave 'plugin'.
 		add_filter( 'upgrader_pre_install', array( __CLASS__, 'on_pre_install' ), 10, 2 );
 		// Reinstallazione / upload con "sostituisci quello attuale" / wp plugin install --force:
-		// hook_extra NON ha 'plugin', ma la cartella scompattata si chiama wp-spid-cie.
+		// hook_extra NON ha 'plugin', ma la cartella scompattata si chiama auth-spid-cie.
 		// Scatta prima della cancellazione della cartella esistente.
 		add_filter( 'upgrader_source_selection', array( __CLASS__, 'on_source_selection' ), 10, 4 );
 		add_filter( 'upgrader_post_install', array( __CLASS__, 'on_post_install' ), 10, 3 );
+		// Installazione fallita: se la cartella dati e' ancora al suo posto la copia non serve piu'.
+		add_filter( 'upgrader_install_package_result', array( __CLASS__, 'on_install_result' ), 10, 2 );
 	}
 
 	private static function plugin_folder() {
@@ -52,7 +59,7 @@ class DataPreserver {
 		if ( ! is_array( $hook_extra ) || empty( $hook_extra['plugin'] ) ) {
 			return false;
 		}
-		return self::plugin_folder() . '/wp-spid-cie.php' === $hook_extra['plugin'];
+		return self::plugin_folder() . '/auth-spid-cie.php' === $hook_extra['plugin'];
 	}
 
 	/** Cartella dati da proteggere, o null se sta fuori dal plugin (WPSPID_PRIVATE_DIR). */
@@ -82,7 +89,7 @@ class DataPreserver {
 		}
 		$backup = self::backup_root() . '/wpspid-preserve-' . bin2hex( random_bytes( 6 ) );
 		if ( ! self::backup( $src, $backup ) ) {
-			return new \WP_Error( 'wpspid_backup_failed', 'Operazione annullata: non è stato possibile mettere al sicuro chiavi e metadata del plugin SPID/CIE (cartella data/). Verifica i permessi di wp-content/upgrade.' );
+			return new \WP_Error( 'wpspid_backup_failed', __( 'Operation cancelled: the keys and metadata of the SPID/CIE plugin (data/ folder) could not be safely backed up. Check the permissions of wp-content/upgrade.', 'auth-spid-cie' ) );
 		}
 		update_option( self::OPTION, $backup, false );
 		self::$protected = true;
@@ -114,7 +121,7 @@ class DataPreserver {
 			return $source;
 		}
 		$folder = basename( rtrim( $source, '/' ) );
-		if ( self::plugin_folder() !== $folder || ! is_file( rtrim( $source, '/' ) . '/wp-spid-cie.php' ) ) {
+		if ( self::plugin_folder() !== $folder || ! is_file( rtrim( $source, '/' ) . '/auth-spid-cie.php' ) ) {
 			return $source;
 		}
 		$r = self::protect();
@@ -144,6 +151,29 @@ class DataPreserver {
 			update_option( self::FAILED, $backup, false );
 		}
 		return $response;
+	}
+
+	/**
+	 * Dopo l'installazione del pacchetto. Se e' fallita e la cartella dati esiste ancora ed e' identica
+	 * alla copia, la copia di sicurezza e' inutile e viene tolta (non resta una copia della chiave
+	 * dimenticata in wp-content/upgrade). Se la cartella e' stata gia' cancellata la copia resta.
+	 *
+	 * @param array|\WP_Error $result
+	 * @param array           $hook_extra
+	 * @return array|\WP_Error Invariato.
+	 */
+	public static function on_install_result( $result, $hook_extra ) {
+		if ( ! is_wp_error( $result ) ) {
+			return $result;
+		}
+		$backup = get_option( self::OPTION );
+		$data   = self::data_dir();
+		if ( $backup && is_dir( $backup ) && null !== $data && is_dir( $data ) && self::identical( $backup, $data ) ) {
+			self::remove_dir( $backup );
+			delete_option( self::OPTION );
+			self::$protected = false;
+		}
+		return $result;
 	}
 
 	/**
@@ -177,7 +207,7 @@ class DataPreserver {
 
 	/** Copia ricorsiva (file nascosti inclusi) mantenendo i permessi. */
 	private static function copy_dir( $src, $dst ) {
-		if ( ! is_dir( $dst ) && ! @mkdir( $dst, fileperms( $src ) & 0777, true ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		if ( ! is_dir( $dst ) && ! @mkdir( $dst, fileperms( $src ) & 0777, true ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- copia durante l'aggiornamento, mantiene i permessi
 			return false;
 		}
 		foreach ( scandir( $src ) as $name ) {
@@ -195,7 +225,7 @@ class DataPreserver {
 			if ( ! @copy( $from, $to ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors
 				return false;
 			}
-			chmod( $to, fileperms( $from ) & 0777 );
+			chmod( $to, fileperms( $from ) & 0777 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- permessi restrittivi sulla chiave privata: WP_Filesystem non e' adatto
 		}
 		return true;
 	}
@@ -228,8 +258,8 @@ class DataPreserver {
 				continue;
 			}
 			$p = $dir . '/' . $name;
-			is_dir( $p ) && ! is_link( $p ) ? self::remove_dir( $p ) : @unlink( $p ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+			is_dir( $p ) && ! is_link( $p ) ? self::remove_dir( $p ) : wp_delete_file( $p );
 		}
-		@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- pulizia della copia temporanea
 	}
 }

@@ -32,7 +32,7 @@ class AuthnRequestBuilder {
 		$private_key = CertificateManager::get_private_key( $service );
 		$cert        = CertificateManager::get_certificate( $service );
 		if ( ! $private_key || ! $cert ) {
-			throw new \Exception( 'Certificato o chiave privata del Service Provider mancanti: impossibile firmare la richiesta.' );
+			throw new \Exception( 'Service Provider certificate or private key missing: unable to sign the request.' );
 		}
 
 		$entity_id     = Config::entity_id( $service );

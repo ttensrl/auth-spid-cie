@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- i messaggi delle eccezioni non vengono stampati direttamente: chi li mostra li esegue con esc_html().
 namespace WpSpidCie\Support;
 
 use WpSpidCie\Cert\CertificateManager;
@@ -66,20 +67,20 @@ class Requirements {
 
 	private static function tmp_writable( array $env ) {
 		$env = $env + self::$env;
-		return isset( $env['tmp_writable'] ) ? (bool) $env['tmp_writable'] : is_writable( sys_get_temp_dir() );
+		return isset( $env['tmp_writable'] ) ? (bool) $env['tmp_writable'] : wp_is_writable( sys_get_temp_dir() );
 	}
 
 	/**
 	 * Controlli economici (nessuna generazione di chiavi).
 	 *
 	 * @param array $env Override per i test.
-	 * @return string[] Errori, in italiano.
+	 * @return string[] Error messages (translated).
 	 */
 	public static function check( array $env = array() ) {
 		$errors = array();
 		foreach ( self::EXTENSIONS as $ext ) {
 			if ( ! self::loaded( $ext, $env ) ) {
-				$errors[] = sprintf( 'L\'estensione PHP "%s" è richiesta.', $ext );
+				$errors[] = sprintf( /* translators: %s: PHP extension name. */ __( 'The PHP extension "%s" is required.', 'auth-spid-cie' ), $ext );
 			}
 		}
 		if ( self::loaded( 'openssl', $env ) ) {
@@ -90,7 +91,7 @@ class Requirements {
 				}
 			}
 			if ( $missing ) {
-				$errors[] = 'Funzioni OpenSSL non disponibili (forse disattivate dall\'hosting con disable_functions): ' . implode( ', ', $missing ) . '.';
+				$errors[] = sprintf( /* translators: %s: list of function names. */ __( 'OpenSSL functions not available (possibly disabled by the host with disable_functions): %s.', 'auth-spid-cie' ), implode( ', ', $missing ) );
 			}
 		}
 		return $errors;
@@ -114,13 +115,13 @@ class Requirements {
 		$errors = self::check( $env );
 
 		if ( ! $errors && ! self::tmp_writable( $env ) ) {
-			$errors[] = 'La cartella temporanea di PHP (' . sys_get_temp_dir() . ') non è scrivibile: OpenSSL ne ha bisogno per la configurazione.';
+			$errors[] = sprintf( /* translators: %s: temporary folder path. */ __( 'The PHP temporary folder (%s) is not writable: OpenSSL needs it for its configuration.', 'auth-spid-cie' ), sys_get_temp_dir() );
 		}
 
 		if ( ! $errors ) {
 			$dir = CertificateManager::get_storage_dir();
-			if ( ! is_dir( $dir ) || ! is_writable( $dir ) ) {
-				$errors[] = 'La cartella dei dati del plugin non è scrivibile: ' . $dir;
+			if ( ! is_dir( $dir ) || ! wp_is_writable( $dir ) ) {
+				$errors[] = sprintf( /* translators: %s: folder path. */ __( 'The plugin data folder is not writable: %s', 'auth-spid-cie' ), $dir );
 			}
 		}
 
@@ -139,10 +140,10 @@ class Requirements {
 					// 2048 bit: stessa configurazione OpenSSL del plugin ma molto più veloce di 3072.
 					$m = CertificateManager::build_material( $type, $subject, 1, 2048 );
 					if ( ! openssl_x509_parse( $m[1] ) ) {
-						$errors[] = 'Certificato di prova non leggibile (' . strtoupper( $type ) . ').';
+						$errors[] = sprintf( /* translators: %s: SPID or CIE. */ __( 'Test certificate not readable (%s).', 'auth-spid-cie' ), strtoupper( $type ) );
 					}
 				} catch ( \Throwable $e ) {
-					$errors[] = 'Generazione di prova ' . strtoupper( $type ) . ' non riuscita: ' . $e->getMessage();
+					$errors[] = sprintf( /* translators: 1: SPID or CIE, 2: technical error message. */ __( 'Test generation for %1$s failed: %2$s', 'auth-spid-cie' ), strtoupper( $type ), $e->getMessage() );
 				}
 			}
 		}
@@ -176,7 +177,7 @@ class Requirements {
 	public static function assert_can_generate() {
 		$errors = self::check();
 		if ( $errors ) {
-			throw new \Exception( 'Il server non permette di generare certificati: ' . implode( ' ', $errors ) );
+			throw new \Exception( 'The server does not allow generating certificates: ' . implode( ' ', $errors ) );
 		}
 	}
 }

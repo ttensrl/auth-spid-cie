@@ -38,7 +38,7 @@ class MetadataBuilder {
 		$cert      = CertificateManager::get_certificate( $service );
 		$key       = CertificateManager::get_private_key( $service );
 		if ( ! $cert || ! $key ) {
-			throw new \Exception( 'Certificato o chiave privata mancanti: impossibile firmare il metadata.' );
+			throw new \Exception( 'Certificate or private key missing: unable to sign the metadata.' );
 		}
 
 		$org_name    = self::first( $c['org_name'], get_bloginfo( 'name' ) );

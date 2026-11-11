@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="WP SPID CIE">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Auth SPID CIE">
   <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a3d8f"/><stop offset="1" stop-color="#0066cc"/></linearGradient></defs>
   <rect width="128" height="128" rx="26" fill="url(#g)"/>
   <path d="M64 20 100 34v26c0 22-15 38-36 48C43 98 28 82 28 60V34z" fill="#fff" opacity=".95"/>
   <circle cx="64" cy="55" r="11" fill="#0066cc"/>
-  <path d="M60 64h8l2 28-6 6-6-6z" fill="#0066cc"/>
+  <path d="M59 64h10l4 30H55z" fill="#0066cc"/>
 </svg>

@@ -54,11 +54,19 @@ class Plugin {
 		}
 		$probe = \WpSpidCie\Support\Requirements::cached();
 		if ( $probe && empty( $probe['ok'] ) ) {
-			echo '<div class="notice notice-error"><p><strong>SPID/CIE bloccato:</strong> questo server non permette di generare o usare i certificati.</p><ul style="list-style:disc;margin-left:20px"><li>' . implode( '</li><li>', array_map( 'esc_html', $probe['errors'] ) ) . '</li></ul><p>Login, ACS e metadata sono disattivati finché il problema non è risolto. <a href="' . esc_url( admin_url( 'options-general.php?page=wpspid-settings' ) ) . '">Ricontrolla</a>.</p></div>';
+			echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'SPID/CIE blocked:', 'auth-spid-cie' ) . '</strong> ' . esc_html__( 'this server does not allow generating or using certificates.', 'auth-spid-cie' ) . '</p><ul style="list-style:disc;margin-left:20px"><li>' . implode( '</li><li>', array_map( 'esc_html', $probe['errors'] ) ) . '</li></ul><p>' . esc_html__( 'Login, ACS and metadata are disabled until the problem is solved.', 'auth-spid-cie' ) . ' <a href="' . esc_url( admin_url( 'options-general.php?page=wpspid-settings' ) ) . '">' . esc_html__( 'Check again', 'auth-spid-cie' ) . '</a>.</p></div>';
 		}
 		$failed = get_option( \WpSpidCie\Support\DataPreserver::FAILED );
 		if ( $failed ) {
-			echo '<div class="notice notice-error"><p><strong>SPID/CIE:</strong> dopo l\'aggiornamento non è stato possibile rimettere al suo posto la cartella dei dati (chiavi e metadata). La copia di sicurezza è in <code>' . esc_html( $failed ) . '</code>: copiala in <code>' . esc_html( \WpSpidCie\Cert\CertificateManager::default_storage_dir() ) . '</code> prima di fare altro.</p></div>';
+			echo '<div class="notice notice-error"><p>' . wp_kses(
+				sprintf(
+					/* translators: 1: path of the backup copy, 2: path where the data folder must be restored. */
+					__( '<strong>SPID/CIE:</strong> after the update the data folder (keys and metadata) could not be put back in place. The backup copy is in %1$s: copy it to %2$s before doing anything else.', 'auth-spid-cie' ),
+					'<code>' . esc_html( $failed ) . '</code>',
+					'<code>' . esc_html( \WpSpidCie\Cert\CertificateManager::default_storage_dir() ) . '</code>'
+				),
+				array( 'strong' => array(), 'code' => array() )
+			) . '</p></div>';
 		}
 	}
 

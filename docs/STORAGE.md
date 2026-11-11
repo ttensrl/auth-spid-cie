@@ -2,7 +2,7 @@
 
 ## Dove
 
-Tutto in **`wp-content/plugins/wp-spid-cie/data/`** (percorso alternativo: costante `WPSPID_PRIVATE_DIR` in `wp-config.php`, per chi può usare una cartella privata).
+Tutto in **`wp-content/plugins/auth-spid-cie/data/`** (percorso alternativo: costante `WPSPID_PRIVATE_DIR` in `wp-config.php`, per chi può usare una cartella privata).
 
 | File | Contenuto | Pubblico? |
 |---|---|---|

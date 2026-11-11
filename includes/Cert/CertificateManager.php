@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- i messaggi delle eccezioni non vengono stampati direttamente: chi li mostra li esegue con esc_html().
 namespace WpSpidCie\Cert;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -118,11 +119,11 @@ class CertificateManager {
 		}
 		self::write_files( $paths, $key, $cert );
 		if ( trim( (string) self::get_private_key_raw( $paths['key'] ) ) !== trim( $key ) ) {
-			@unlink( $paths['key'] ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+			wp_delete_file( $paths['key'] );
 			return false;
 		}
-		@unlink( $old_key ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
-		@unlink( $old_cert ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		wp_delete_file( $old_key );
+		wp_delete_file( $old_cert );
 		return true;
 	}
 
@@ -227,16 +228,16 @@ class CertificateManager {
 		$required = array( 'org_name', 'common_name', 'uri', 'org_identifier', 'country', 'locality' );
 		foreach ( $required as $k ) {
 			if ( empty( $subject[ $k ] ) ) {
-				throw new \Exception( 'Dato mancante per il certificato: ' . $k );
+				throw new \Exception( 'Missing data for the certificate: ' . $k );
 			}
 		}
 
 		$conf = self::openssl_config( 'spid' === $type, $public );
 		$cnf  = tempnam( sys_get_temp_dir(), 'wpspid' );
 		if ( false === $cnf ) {
-			throw new \Exception( 'Impossibile creare il file di configurazione OpenSSL temporaneo.' );
+			throw new \Exception( 'Unable to create the temporary OpenSSL configuration file.' );
 		}
-		chmod( $cnf, 0600 );
+		chmod( $cnf, 0600 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- permessi restrittivi sulla chiave privata: WP_Filesystem non e' adatto
 		file_put_contents( $cnf, $conf );
 
 		try {
@@ -268,12 +269,12 @@ class CertificateManager {
 			}
 			$x509 = openssl_csr_sign( $csr, null, $private_key, (int) $days, $config_args );
 			if ( ! $x509 ) {
-				throw new \Exception( 'Firma del certificato fallita: ' . openssl_error_string() );
+				throw new \Exception( 'Certificate signing failed: ' . openssl_error_string() );
 			}
 			openssl_x509_export( $x509, $cert_out );
 			openssl_pkey_export( $private_key, $key_out, null, $config_args );
 		} finally {
-			@unlink( $cnf ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+			wp_delete_file( $cnf );
 		}
 
 		return array( $key_out, $cert_out );
@@ -334,15 +335,15 @@ class CertificateManager {
 		// Validate key and cert
 		$pkey = openssl_pkey_get_private( $private_key );
 		if ( ! $pkey ) {
-			throw new \Exception( 'Private key non valida.' );
+			throw new \Exception( 'Invalid private key.' );
 		}
 		$cert = openssl_x509_read( $certificate );
 		if ( ! $cert ) {
-			throw new \Exception( 'Certificato non valido.' );
+			throw new \Exception( 'Invalid certificate.' );
 		}
 
 		if ( ! openssl_x509_check_private_key( $cert, $pkey ) ) {
-			throw new \Exception( 'La chiave privata non corrisponde al certificato.' );
+			throw new \Exception( 'The private key does not match the certificate.' );
 		}
 
 		self::write_files( self::get_paths( $type ), $private_key, $certificate );
@@ -359,9 +360,9 @@ class CertificateManager {
 		umask( $old );
 		$c = file_put_contents( $paths['cert'], $cert_pem );
 		if ( false === $k || false === $c ) {
-			throw new \Exception( 'Impossibile salvare certificato o chiave privata.' );
+			throw new \Exception( 'Unable to save the certificate or private key.' );
 		}
-		chmod( $paths['key'], 0600 );
-		chmod( $paths['cert'], 0644 );
+		chmod( $paths['key'], 0600 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- permessi restrittivi sulla chiave privata: WP_Filesystem non e' adatto
+		chmod( $paths['cert'], 0644 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- permessi restrittivi sulla chiave privata: WP_Filesystem non e' adatto
 	}
 }

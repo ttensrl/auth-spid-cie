@@ -42,7 +42,7 @@ class MetadataSnapshot {
 		$doc  = XmlSecurity::load_xml( $xml );
 		$root = $doc->documentElement;
 		if ( ! $root || 'EntityDescriptor' !== $root->localName ) {
-			throw new \Exception( 'Non è un metadata SAML (manca EntityDescriptor).' );
+			throw new \Exception( 'Not a SAML metadata document (EntityDescriptor missing).' );
 		}
 		$xp = new \DOMXPath( $doc );
 		$xp->registerNamespace( 'ds', self::NS_DS );
@@ -78,7 +78,7 @@ class MetadataSnapshot {
 			'entity_id' => $doc->documentElement->getAttribute( 'entityID' ),
 		);
 		if ( false === file_put_contents( $p['xml'], $xml ) || false === file_put_contents( $p['meta'], wp_json_encode_compat( $meta ) ) ) {
-			throw new \Exception( 'Impossibile salvare il metadata registrato.' );
+			throw new \Exception( 'Unable to save the registered metadata.' );
 		}
 		return $meta;
 	}

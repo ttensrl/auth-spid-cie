@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- endpoint pubblici di login SPID/CIE: parametri GET di sola lettura, l'autenticita' viene dalla firma SAML.
 namespace WpSpidCie\Http;
 
 use WpSpidCie\Auth\SessionGate;
@@ -46,7 +47,7 @@ class Router {
 		}
 
 		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
-			define( 'DONOTCACHEPAGE', true );
+			define( 'DONOTCACHEPAGE', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- costante standard letta dai plugin di cache
 		}
 		nocache_headers();
 
@@ -70,7 +71,7 @@ class Router {
 	}
 
 	private function fail( $message, $status = 400 ) {
-		wp_die( esc_html( $message ), esc_html__( 'Errore SPID/CIE', 'wp-spid-cie' ), array( 'response' => $status, 'back_link' => true ) );
+		wp_die( esc_html( $message ), esc_html__( 'SPID/CIE error', 'auth-spid-cie' ), array( 'response' => (int) $status, 'back_link' => true ) );
 	}
 
 	/** Pick endpoint: CIE always POST; SPID prefers Redirect, falls back to POST. */
@@ -92,7 +93,7 @@ class Router {
 
 	private function require_enabled() {
 		if ( ! Config::is_enabled() ) {
-			$this->fail( 'Accesso con SPID/CIE non attivo.', 503 );
+			$this->fail( __( 'SPID/CIE login is not enabled.', 'auth-spid-cie' ), 503 );
 		}
 	}
 
@@ -102,14 +103,14 @@ class Router {
 		$return = isset( $_GET['returnTo'] ) ? wp_validate_redirect( esc_url_raw( wp_unslash( $_GET['returnTo'] ) ), '' ) : '';
 		status_header( 200 );
 		add_filter( 'pre_get_document_title', function () {
-			return __( 'Accedi con SPID o CIE', 'wp-spid-cie' ) . ' - ' . get_bloginfo( 'name' );
+			return __( 'Log in with SPID or CIE', 'auth-spid-cie' ) . ' - ' . get_bloginfo( 'name' );
 		} );
 		add_filter( 'body_class', function ( $classes ) {
 			$classes[] = 'wpspid-choose';
 			return $classes;
 		} );
 		\WpSpidCie\Ui\Buttons::enqueue();
-		$this->make_virtual_page( __( 'Accedi con SPID o CIE', 'wp-spid-cie' ) );
+		$this->make_virtual_page( __( 'Log in with SPID or CIE', 'auth-spid-cie' ) );
 		get_header();
 		echo '<main id="main-content" class="wpspid-main">' . \WpSpidCie\Ui\Buttons::page( array( 'return' => $return ) ) . '</main>'; // phpcs:ignore WordPress.Security.EscapeOutput -- every part is escaped in Buttons.
 		get_footer();
@@ -148,14 +149,14 @@ class Router {
 		$this->require_enabled();
 		$idp_entity_id = isset( $_GET['idp'] ) ? sanitize_text_field( wp_unslash( $_GET['idp'] ) ) : '';
 		if ( '' === $idp_entity_id ) {
-			$this->fail( 'IdP non specificato.' );
+			$this->fail( __( 'IdP not specified.', 'auth-spid-cie' ) );
 		}
 		$idp = IdpRepository::find_by_entity_id( $idp_entity_id );
 		if ( ! $idp ) {
-			$this->fail( 'IdP non trovato.' );
+			$this->fail( __( 'IdP not found.', 'auth-spid-cie' ) );
 		}
 		if ( empty( $idp['certs'] ) ) {
-			$this->fail( 'Certificati del gestore di identità non disponibili: accesso temporaneamente non possibile.', 503 );
+			$this->fail( __( 'Identity provider certificates are not available: login is temporarily not possible.', 'auth-spid-cie' ), 503 );
 		}
 
 		$service = $idp['type'];
@@ -168,7 +169,7 @@ class Router {
 
 		list( $sso_url, $binding ) = $this->pick_endpoint( $idp );
 		if ( '' === $sso_url ) {
-			$this->fail( 'Endpoint SSO non disponibile per questo gestore di identità.', 503 );
+			$this->fail( __( 'SSO endpoint not available for this identity provider.', 'auth-spid-cie' ), 503 );
 		}
 
 		try {
@@ -189,35 +190,34 @@ class Router {
 				Bindings::send_post( $sso_url, $request['xml'], '' );
 			}
 		} catch ( \Exception $e ) {
-			error_log( '[wp-spid-cie] login: ' . $e->getMessage() );
-			$this->fail( 'Impossibile avviare l\'autenticazione. Contattare l\'amministratore del sito.', 500 );
+			\WpSpidCie\Support\Log::write( '[auth-spid-cie] login: ' . $e->getMessage() );
+			$this->fail( __( 'Unable to start authentication. Please contact the site administrator.', 'auth-spid-cie' ), 500 );
 		}
 	}
 
 	private function handle_acs() {
 		$this->require_enabled();
-		if ( 'POST' !== ( isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : '' ) ) {
-			$this->fail( 'Metodo non consentito.', 405 );
+		if ( 'POST' !== ( isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '' ) ) {
+			$this->fail( __( 'Method not allowed.', 'auth-spid-cie' ), 405 );
 		}
-		// phpcs:ignore WordPress.Security.NonceVerification -- authenticity comes from the SAML signature.
-		$saml_response = isset( $_POST['SAMLResponse'] ) ? wp_unslash( $_POST['SAMLResponse'] ) : '';
+		$saml_response = isset( $_POST['SAMLResponse'] ) ? wp_unslash( $_POST['SAMLResponse'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- l'autenticita' viene dalla firma SAML; base64 validato dal parser
 		if ( ! is_string( $saml_response ) || '' === $saml_response ) {
-			$this->fail( 'Risposta SAML mancante.' );
+			$this->fail( __( 'SAML response missing.', 'auth-spid-cie' ) );
 		}
 
 		// Locate the pending request through InResponseTo (single use).
 		$in_response_to = ResponseValidator::peek_in_response_to( $saml_response );
 		if ( '' === $in_response_to || 0 !== strpos( $in_response_to, 'wpspid_' ) ) {
-			$this->fail( 'Risposta non associabile ad alcuna richiesta.' );
+			$this->fail( __( 'The response cannot be matched to any request.', 'auth-spid-cie' ) );
 		}
 		$state = RequestStore::consume( $in_response_to );
 		if ( ! $state ) {
-			$this->fail( 'Richiesta di accesso scaduta o già utilizzata. Riprovare.' );
+			$this->fail( __( 'Login request expired or already used. Please try again.', 'auth-spid-cie' ) );
 		}
 
 		$idp = IdpRepository::find_by_entity_id( $state['idp_entity_id'] );
 		if ( ! $idp || empty( $idp['certs'] ) ) {
-			$this->fail( 'Gestore di identità non riconosciuto.' );
+			$this->fail( __( 'Identity provider not recognized.', 'auth-spid-cie' ) );
 		}
 
 		try {
@@ -235,7 +235,7 @@ class Router {
 
 			$valid_until = $result['not_on_or_after'];
 			if ( ! ReplayCache::mark( 'a:' . $result['assertion_id'], $valid_until ) || ! ReplayCache::mark( 'r:' . $result['response_id'], $valid_until ) ) {
-				throw new ValidationException( 'Messaggio già utilizzato (replay).', 'replay' );
+				throw new ValidationException( 'Message already used (replay).', 'replay' );
 			}
 
 			SessionGate::login( $result['attributes'], array(
@@ -252,38 +252,38 @@ class Router {
 			exit;
 
 		} catch ( ValidationException $e ) {
-			error_log( sprintf( '[wp-spid-cie] ACS rejected (%s): %s %s', $e->reason, $e->getMessage(), wp_json_encode( $e->details ) ) );
+			\WpSpidCie\Support\Log::write( sprintf( '[auth-spid-cie] ACS rejected (%s): %s %s', $e->reason, $e->getMessage(), wp_json_encode( $e->details ) ) );
 			$this->fail( $this->user_message( $e ) );
 		} catch ( \Exception $e ) {
-			error_log( '[wp-spid-cie] ACS error: ' . $e->getMessage() );
-			$this->fail( 'Errore durante l\'autenticazione. Riprovare.', 500 );
+			\WpSpidCie\Support\Log::write( '[auth-spid-cie] ACS error: ' . $e->getMessage() );
+			$this->fail( __( 'Error during authentication. Please try again.', 'auth-spid-cie' ), 500 );
 		}
 	}
 
-	/** Italian, user-safe message. Technical detail goes to the log only. */
+	/** User-safe message. Technical detail goes to the log only. */
 	private function user_message( ValidationException $e ) {
 		if ( 'idp_error' === $e->reason ) {
 			$messages = array(
-				'nr19' => 'Autenticazione fallita per ripetuta sottomissione di credenziali errate.',
-				'nr20' => 'Non sono disponibili credenziali compatibili con il livello richiesto dal servizio.',
-				'nr21' => 'Timeout durante l\'autenticazione.',
-				'nr22' => 'Consenso all\'invio dei dati non concesso.',
-				'nr23' => 'Identità sospesa o revocata, oppure credenziali bloccate.',
-				'nr25' => 'Autenticazione annullata.',
+				'nr19' => __( 'Authentication failed after repeated submission of wrong credentials.', 'auth-spid-cie' ),
+				'nr20' => __( 'No credentials compatible with the level required by the service are available.', 'auth-spid-cie' ),
+				'nr21' => __( 'Timeout during authentication.', 'auth-spid-cie' ),
+				'nr22' => __( 'Consent to send the data was not given.', 'auth-spid-cie' ),
+				'nr23' => __( 'Identity suspended or revoked, or credentials blocked.', 'auth-spid-cie' ),
+				'nr25' => __( 'Authentication cancelled.', 'auth-spid-cie' ),
 			);
 			$text = isset( $e->details['message'] ) ? $e->details['message'] : '';
 			if ( preg_match( '/nr(\d{2})/i', $text, $m ) && isset( $messages[ 'nr' . $m[1] ] ) ) {
 				return $messages[ 'nr' . $m[1] ];
 			}
-			return 'Autenticazione non riuscita presso il gestore di identità.';
+			return __( 'Authentication failed at the identity provider.', 'auth-spid-cie' );
 		}
 		if ( 'level' === $e->reason ) {
-			return 'Il livello di sicurezza dell\'identità digitale non è sufficiente per questo servizio.';
+			return __( 'The security level of the digital identity is not sufficient for this service.', 'auth-spid-cie' );
 		}
 		if ( 'expired' === $e->reason ) {
-			return 'La risposta di autenticazione è scaduta. Riprovare.';
+			return __( 'The authentication response has expired. Please try again.', 'auth-spid-cie' );
 		}
-		return 'Impossibile verificare la risposta di autenticazione. Riprovare.';
+		return __( 'Unable to verify the authentication response. Please try again.', 'auth-spid-cie' );
 	}
 
 	private function handle_slo() {
@@ -306,8 +306,8 @@ class Router {
 		try {
 			$xml = \WpSpidCie\Saml\MetadataBuilder::generate( $service );
 		} catch ( \Exception $e ) {
-			error_log( '[wp-spid-cie] metadata: ' . $e->getMessage() );
-			$this->fail( 'Metadata non disponibile: generare prima il certificato del Service Provider.', 503 );
+			\WpSpidCie\Support\Log::write( '[auth-spid-cie] metadata: ' . $e->getMessage() );
+			$this->fail( __( 'Metadata not available: generate the Service Provider certificate first.', 'auth-spid-cie' ), 503 );
 		}
 		header( 'Content-Type: application/samlmetadata+xml; charset=UTF-8' );
 		echo $xml; // phpcs:ignore WordPress.Security.EscapeOutput -- XML document.

@@ -1,6 +1,6 @@
 <p align="center"><img src="assets/img/icon.svg" width="96" alt=""></p>
 
-# WP SPID CIE
+# Auth SPID CIE
 
 **Accesso con SPID e CIE per WordPress, senza dipendenze.** Un plugin autonomo che trasforma il tuo sito in un *Service Provider* SAML 2.0 per i servizi pubblici: il cittadino si identifica con la sua identità digitale e il sito riceve solo i dati che servono, **senza creare un account WordPress**.
 
@@ -43,7 +43,7 @@ Sito (ACS) ◀──────────────────────
 
 ## Installazione
 
-1. Copia la cartella `wp-spid-cie` in `wp-content/plugins/` e attivala. Se il server non può usare OpenSSL l'attivazione viene rifiutata con la causa.
+1. Copia la cartella `auth-spid-cie` in `wp-content/plugins/` e attivala. Se il server non può usare OpenSSL l'attivazione viene rifiutata con la causa.
 2. **Impostazioni → SPID/CIE**: compila i dati dell'ente (entityID `https://…`, ragione sociale, codice IPA o P.IVA, contatti) e salva.
 3. Sezione *Certificati*: **Genera** (o **Importa** quelli già registrati).
 4. Dallo *Stato* apri i link al metadata SPID e CIE: sono quelli da registrare. Dopo la registrazione usa **Salva come registrato**.
@@ -107,7 +107,7 @@ Con il tema attivo l'integrazione è automatica (`includes/Integrations/Theme.ph
 
 Cosa è verificato:
 
-- 31 + 133 test automatici (firma/verifica, validazione Response con casi di attacco, certificati, archiviazione, aggiornamento, interfaccia), su PHP 8.0, 8.2, 8.3 e 8.5.
+- 31 + 138 test automatici (firma/verifica, validazione Response con casi di attacco, certificati, archiviazione, aggiornamento, interfaccia), su PHP 8.0, 8.2, 8.3 e 8.5.
 - Metadata validati con `spid-sp-test` 1.2.18: **SPID 110 controlli, 0 falliti; CIE 85 controlli, 0 falliti**.
 - Reinstallazione vera su WordPress 7.1 con `wp plugin install --force`: i dati restano identici.
 

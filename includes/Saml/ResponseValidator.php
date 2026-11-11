@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- i messaggi delle eccezioni non vengono stampati direttamente: chi li mostra li esegue con esc_html().
 namespace WpSpidCie\Saml;
 
 use WpSpidCie\Xml\SignatureVerifier;
@@ -87,7 +88,7 @@ class ResponseValidator {
 		$resp = $doc->documentElement;
 
 		if ( ! $resp || self::NS_SAMLP !== $resp->namespaceURI || 'Response' !== $resp->localName ) {
-			throw new ValidationException( 'Il documento non è una SAML Response.', 'structure' );
+			throw new ValidationException( 'The document is not a SAML Response.', 'structure' );
 		}
 
 		// --- Status first: error responses carry no assertion. ---
@@ -98,7 +99,7 @@ class ResponseValidator {
 		if ( self::SUCCESS !== $status->getAttribute( 'Value' ) ) {
 			$msg = $xp->query( './samlp:Status/samlp:StatusMessage', $resp )->item( 0 );
 			throw new ValidationException(
-				'Autenticazione non riuscita presso il gestore di identità.',
+				'Authentication failed at the identity provider.',
 				'idp_error',
 				array(
 					'status'  => $status->getAttribute( 'Value' ),
@@ -109,14 +110,14 @@ class ResponseValidator {
 
 		// --- Exactly ONE assertion in the whole document, never encrypted. ---
 		if ( $xp->query( '//saml:EncryptedAssertion' )->length > 0 ) {
-			throw new ValidationException( 'Assertion cifrate non supportate.', 'structure' );
+			throw new ValidationException( 'Encrypted assertions are not supported.', 'structure' );
 		}
 		if ( 1 !== $xp->query( '//saml:Assertion' )->length ) {
-			throw new ValidationException( 'La Response deve contenere esattamente una Assertion.', 'structure' );
+			throw new ValidationException( 'The Response must contain exactly one Assertion.', 'structure' );
 		}
 		$assertions = $xp->query( './saml:Assertion', $resp );
 		if ( 1 !== $assertions->length ) {
-			throw new ValidationException( 'Assertion non figlia diretta della Response.', 'structure' );
+			throw new ValidationException( 'Assertion is not a direct child of the Response.', 'structure' );
 		}
 		$a = $assertions->item( 0 );
 
@@ -127,28 +128,28 @@ class ResponseValidator {
 				SignatureVerifier::verify_element( $doc, $resp, $exp['certs'] );
 			}
 		} catch ( \Exception $e ) {
-			throw new ValidationException( 'Verifica della firma digitale fallita.', 'signature', array( 'error' => $e->getMessage() ) );
+			throw new ValidationException( 'Digital signature verification failed.', 'signature', array( 'error' => $e->getMessage() ) );
 		}
 
 		// --- Response-level checks. ---
-		self::require_eq( $resp->getAttribute( 'Version' ), '2.0', 'Versione SAML non valida.' );
-		self::require_nonempty( $resp->getAttribute( 'ID' ), 'ID della Response mancante.' );
-		self::require_eq( $resp->getAttribute( 'InResponseTo' ), $exp['request_id'], 'InResponseTo non corrisponde alla richiesta.', 'in_response_to' );
-		self::require_eq( $resp->getAttribute( 'Destination' ), $exp['acs_url'], 'Destination non corrisponde all\'ACS.', 'destination' );
+		self::require_eq( $resp->getAttribute( 'Version' ), '2.0', 'Invalid SAML version.' );
+		self::require_nonempty( $resp->getAttribute( 'ID' ), 'Response ID missing.' );
+		self::require_eq( $resp->getAttribute( 'InResponseTo' ), $exp['request_id'], 'InResponseTo does not match the request.', 'in_response_to' );
+		self::require_eq( $resp->getAttribute( 'Destination' ), $exp['acs_url'], 'Destination does not match the ACS.', 'destination' );
 		self::check_instant( $resp->getAttribute( 'IssueInstant' ), $now, $max_age, $skew, 'Response' );
 
 		$r_issuer = $xp->query( './saml:Issuer', $resp )->item( 0 );
 		if ( $r_issuer ) {
-			self::require_eq( trim( $r_issuer->textContent ), $exp['idp_entity_id'], 'Issuer della Response non valido.', 'issuer' );
+			self::require_eq( trim( $r_issuer->textContent ), $exp['idp_entity_id'], 'Invalid Response Issuer.', 'issuer' );
 			if ( ! $is_cie ) {
-				self::require_eq( $r_issuer->getAttribute( 'Format' ), self::ENTITY, 'Format dell\'Issuer della Response non valido.', 'issuer' );
+				self::require_eq( $r_issuer->getAttribute( 'Format' ), self::ENTITY, 'Invalid Response Issuer Format.', 'issuer' );
 			}
 		} elseif ( ! $is_cie ) {
-			throw new ValidationException( 'Issuer della Response mancante.', 'issuer' );
+			throw new ValidationException( 'Response Issuer missing.', 'issuer' );
 		}
 
 		// --- Assertion-level checks (all signed data). ---
-		self::require_eq( $a->getAttribute( 'Version' ), '2.0', 'Versione Assertion non valida.' );
+		self::require_eq( $a->getAttribute( 'Version' ), '2.0', 'Invalid Assertion version.' );
 		self::require_nonempty( $a->getAttribute( 'ID' ), 'ID dell\'Assertion mancante.' );
 		self::check_instant( $a->getAttribute( 'IssueInstant' ), $now, $max_age, $skew, 'Assertion' );
 
@@ -156,9 +157,9 @@ class ResponseValidator {
 		if ( ! $a_issuer ) {
 			throw new ValidationException( 'Issuer dell\'Assertion mancante.', 'issuer' );
 		}
-		self::require_eq( trim( $a_issuer->textContent ), $exp['idp_entity_id'], 'Issuer dell\'Assertion non valido.', 'issuer' );
+		self::require_eq( trim( $a_issuer->textContent ), $exp['idp_entity_id'], 'Invalid Assertion Issuer.', 'issuer' );
 		if ( ! $is_cie ) {
-			self::require_eq( $a_issuer->getAttribute( 'Format' ), self::ENTITY, 'Format dell\'Issuer dell\'Assertion non valido.', 'issuer' );
+			self::require_eq( $a_issuer->getAttribute( 'Format' ), self::ENTITY, 'Invalid Assertion Issuer Format.', 'issuer' );
 		}
 
 		// NameID.
@@ -167,8 +168,8 @@ class ResponseValidator {
 			throw new ValidationException( 'NameID mancante.', 'subject' );
 		}
 		if ( ! $is_cie ) {
-			self::require_eq( $name_id->getAttribute( 'Format' ), self::TRANSIENT, 'Format del NameID non valido.', 'subject' );
-			self::require_nonempty( $name_id->getAttribute( 'NameQualifier' ), 'NameQualifier del NameID mancante.', 'subject' );
+			self::require_eq( $name_id->getAttribute( 'Format' ), self::TRANSIENT, 'Invalid NameID Format.', 'subject' );
+			self::require_nonempty( $name_id->getAttribute( 'NameQualifier' ), 'NameID NameQualifier missing.', 'subject' );
 		}
 
 		// SubjectConfirmation (bearer).
@@ -182,9 +183,9 @@ class ResponseValidator {
 			if ( ! $scd ) {
 				continue;
 			}
-			self::require_eq( $scd->getAttribute( 'Recipient' ), $exp['acs_url'], 'Recipient non corrisponde all\'ACS.', 'recipient' );
-			self::require_eq( $scd->getAttribute( 'InResponseTo' ), $exp['request_id'], 'InResponseTo della SubjectConfirmationData non valido.', 'in_response_to' );
-			$noa = self::time( $scd->getAttribute( 'NotOnOrAfter' ), 'NotOnOrAfter mancante o non valido.' );
+			self::require_eq( $scd->getAttribute( 'Recipient' ), $exp['acs_url'], 'Recipient does not match the ACS.', 'recipient' );
+			self::require_eq( $scd->getAttribute( 'InResponseTo' ), $exp['request_id'], 'Invalid SubjectConfirmationData InResponseTo.', 'in_response_to' );
+			$noa = self::time( $scd->getAttribute( 'NotOnOrAfter' ), 'NotOnOrAfter missing or invalid.' );
 			if ( $noa + $skew <= $now ) {
 				throw new ValidationException( 'SubjectConfirmationData scaduta.', 'expired' );
 			}
@@ -206,11 +207,11 @@ class ResponseValidator {
 		if ( ! $is_cie && ( '' === trim( $nb ) || '' === trim( $noa ) ) ) {
 			throw new ValidationException( 'NotBefore/NotOnOrAfter mancanti nelle Conditions.', 'conditions' );
 		}
-		if ( '' !== trim( $nb ) && self::time( $nb, 'NotBefore non valido.' ) > $now + $skew ) {
-			throw new ValidationException( 'Assertion non ancora valida.', 'expired' );
+		if ( '' !== trim( $nb ) && self::time( $nb, 'Invalid NotBefore.' ) > $now + $skew ) {
+			throw new ValidationException( 'Assertion not yet valid.', 'expired' );
 		}
 		if ( '' !== trim( $noa ) ) {
-			$noa_ts = self::time( $noa, 'NotOnOrAfter non valido.' );
+			$noa_ts = self::time( $noa, 'Invalid NotOnOrAfter.' );
 			if ( $noa_ts + $skew <= $now ) {
 				throw new ValidationException( 'Assertion scaduta.', 'expired' );
 			}
@@ -223,7 +224,7 @@ class ResponseValidator {
 			}
 		}
 		if ( ! $audience_ok ) {
-			throw new ValidationException( 'Audience non corrisponde al Service Provider.', 'audience' );
+			throw new ValidationException( 'Audience does not match the Service Provider.', 'audience' );
 		}
 
 		// AuthnStatement / level.
@@ -239,7 +240,7 @@ class ResponseValidator {
 		if ( preg_match( '#^https://www\.spid\.gov\.it/SpidL([123])$#', $class_ref, $m ) ) {
 			self::check_level( (int) $m[1], (int) $exp['level'], $exp['comparison'] );
 		} elseif ( ! $is_cie ) {
-			throw new ValidationException( 'AuthnContextClassRef non valido.', 'authn', array( 'value' => $class_ref ) );
+			throw new ValidationException( 'Invalid AuthnContextClassRef.', 'authn', array( 'value' => $class_ref ) );
 		}
 		// CIE: unknown class refs are accepted (spid-php "CIE bypass"); see docs/TODO-validator.md.
 
@@ -263,7 +264,7 @@ class ResponseValidator {
 			}
 		}
 		if ( $missing ) {
-			throw new ValidationException( 'Attributi richiesti non ricevuti.', 'attributes', array( 'missing' => $missing ) );
+			throw new ValidationException( 'Required attributes not received.', 'attributes', array( 'missing' => $missing ) );
 		}
 		if ( isset( $attributes['fiscalNumber'] ) && 0 === strpos( $attributes['fiscalNumber'], 'TINIT-' ) ) {
 			$attributes['fiscalNumber'] = substr( $attributes['fiscalNumber'], 6 );
@@ -294,7 +295,7 @@ class ResponseValidator {
 		}
 		if ( ! $ok ) {
 			throw new ValidationException(
-				'Livello di autenticazione non accettabile.',
+				'Unacceptable authentication level.',
 				'level',
 				array( 'requested' => $requested, 'received' => $received, 'comparison' => $comparison )
 			);
@@ -302,12 +303,12 @@ class ResponseValidator {
 	}
 
 	private static function check_instant( $value, $now, $max_age, $skew, $what ) {
-		$ts = self::time( $value, 'IssueInstant ' . $what . ' non valido.' );
+		$ts = self::time( $value, 'Invalid IssueInstant of ' . $what . '.' );
 		if ( $ts < $now - $max_age ) {
-			throw new ValidationException( $what . ' scaduta (IssueInstant troppo vecchio). Verificare l\'orologio del server.', 'expired' );
+			throw new ValidationException( $what . ' expired (IssueInstant too old). Check the server clock.', 'expired' );
 		}
 		if ( $ts > $now + $skew ) {
-			throw new ValidationException( $what . ' emessa nel futuro. Verificare l\'orologio del server.', 'expired' );
+			throw new ValidationException( $what . ' issued in the future. Check the server clock.', 'expired' );
 		}
 	}
 
@@ -338,7 +339,7 @@ class ResponseValidator {
 		}
 		$xml = base64_decode( $b64, true );
 		if ( false === $xml || '' === $xml || strlen( $xml ) > self::MAX_SIZE ) {
-			throw new ValidationException( 'SAMLResponse non valida.', 'structure' );
+			throw new ValidationException( 'Invalid SAMLResponse.', 'structure' );
 		}
 		return $xml;
 	}

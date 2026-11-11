@@ -12,3 +12,14 @@ spl_autoload_register( function ( $class ) {
 		require $file;
 	}
 } );
+
+// Stub delle funzioni WordPress usate dal plugin (i test girano senza WordPress).
+if ( ! function_exists( 'wp_delete_file' ) ) {
+	function wp_delete_file( $file ) { @unlink( $file ); }
+}
+if ( ! function_exists( 'wp_is_writable' ) ) {
+	function wp_is_writable( $path ) { return is_writable( $path ); }
+}
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+	function wp_strip_all_tags( $s ) { return trim( strip_tags( $s ) ); }
+}

@@ -45,7 +45,7 @@ class SessionGate {
 
 	public static function login( array $attributes, array $meta = array() ) {
 		if ( ! self::start( true ) ) {
-			throw new \Exception( 'Impossibile avviare la sessione.' );
+			throw new \Exception( 'Unable to start the session.' );
 		}
 		session_regenerate_id( true );
 		$_SESSION[ self::KEY_LEGACY ] = $attributes;
@@ -61,11 +61,11 @@ class SessionGate {
 	}
 
 	public static function is_authenticated() {
-		return self::meta() !== array() && ! empty( $_SESSION[ self::KEY_LEGACY ] );
+		return self::meta() !== array() && ! empty( $_SESSION[ self::KEY_LEGACY ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- dati scritti dal plugin stesso
 	}
 
 	public static function attributes() {
-		return self::is_authenticated() ? (array) $_SESSION[ self::KEY_LEGACY ] : array();
+		return self::is_authenticated() ? (array) $_SESSION[ self::KEY_LEGACY ] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- dati scritti dal plugin stesso
 	}
 
 	/** Session metadata (idp, name_id, session_index, level, time) or empty array. */
@@ -73,7 +73,7 @@ class SessionGate {
 		if ( ! self::start() || empty( $_SESSION[ self::KEY_META ] ) ) {
 			return array();
 		}
-		$meta     = (array) $_SESSION[ self::KEY_META ];
+		$meta     = (array) $_SESSION[ self::KEY_META ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- dati scritti dal plugin stesso
 		$lifetime = (int) apply_filters( 'wpspid_session_lifetime', 2 * HOUR_IN_SECONDS );
 		if ( empty( $meta['time'] ) || time() - (int) $meta['time'] > $lifetime ) {
 			unset( $_SESSION[ self::KEY_LEGACY ], $_SESSION[ self::KEY_META ] );

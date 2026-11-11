@@ -1,0 +1,1033 @@
+# Copyright (C) 2026 Luca Terribili
+# This file is distributed under the GPL-3.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Auth SPID CIE 0.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/ttensrl/auth-spid-cie/issues\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-11-11T11:23:02+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: auth-spid-cie\n"
+
+#. Plugin Name of the plugin
+#: auth-spid-cie.php
+msgid "Auth SPID CIE"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: auth-spid-cie.php
+msgid "https://github.com/ttensrl/auth-spid-cie"
+msgstr ""
+
+#. Description of the plugin
+#: auth-spid-cie.php
+msgid "Standalone SPID and CIE login (SAML 2.0 Service Provider) with no external dependencies."
+msgstr ""
+
+#. Author of the plugin
+#: auth-spid-cie.php
+msgid "Luca Terribili"
+msgstr ""
+
+#. Author URI of the plugin
+#: auth-spid-cie.php
+msgid "https://lucaterribili.it"
+msgstr ""
+
+#. translators: %s: current PHP version.
+#: auth-spid-cie.php:55
+#, php-format
+msgid "The plugin requires PHP 8.0 or higher. Your current version is %s."
+msgstr ""
+
+#: auth-spid-cie.php:75
+msgid "The SPID/CIE plugin cannot be activated on this server."
+msgstr ""
+
+#: auth-spid-cie.php:75
+msgid "Ask your hosting provider to enable the PHP openssl extension and its functions."
+msgstr ""
+
+#: includes/Http/Router.php:74
+msgid "SPID/CIE error"
+msgstr ""
+
+#: includes/Http/Router.php:96
+msgid "SPID/CIE login is not enabled."
+msgstr ""
+
+#: includes/Http/Router.php:106
+#: includes/Http/Router.php:113
+#: includes/Ui/Buttons.php:161
+msgid "Log in with SPID or CIE"
+msgstr ""
+
+#: includes/Http/Router.php:152
+msgid "IdP not specified."
+msgstr ""
+
+#: includes/Http/Router.php:156
+msgid "IdP not found."
+msgstr ""
+
+#: includes/Http/Router.php:159
+msgid "Identity provider certificates are not available: login is temporarily not possible."
+msgstr ""
+
+#: includes/Http/Router.php:172
+msgid "SSO endpoint not available for this identity provider."
+msgstr ""
+
+#: includes/Http/Router.php:194
+msgid "Unable to start authentication. Please contact the site administrator."
+msgstr ""
+
+#: includes/Http/Router.php:201
+msgid "Method not allowed."
+msgstr ""
+
+#: includes/Http/Router.php:205
+msgid "SAML response missing."
+msgstr ""
+
+#: includes/Http/Router.php:211
+msgid "The response cannot be matched to any request."
+msgstr ""
+
+#: includes/Http/Router.php:215
+msgid "Login request expired or already used. Please try again."
+msgstr ""
+
+#: includes/Http/Router.php:220
+msgid "Identity provider not recognized."
+msgstr ""
+
+#: includes/Http/Router.php:259
+msgid "Error during authentication. Please try again."
+msgstr ""
+
+#: includes/Http/Router.php:267
+msgid "Authentication failed after repeated submission of wrong credentials."
+msgstr ""
+
+#: includes/Http/Router.php:268
+msgid "No credentials compatible with the level required by the service are available."
+msgstr ""
+
+#: includes/Http/Router.php:269
+msgid "Timeout during authentication."
+msgstr ""
+
+#: includes/Http/Router.php:270
+msgid "Consent to send the data was not given."
+msgstr ""
+
+#: includes/Http/Router.php:271
+msgid "Identity suspended or revoked, or credentials blocked."
+msgstr ""
+
+#: includes/Http/Router.php:272
+msgid "Authentication cancelled."
+msgstr ""
+
+#: includes/Http/Router.php:278
+msgid "Authentication failed at the identity provider."
+msgstr ""
+
+#: includes/Http/Router.php:281
+msgid "The security level of the digital identity is not sufficient for this service."
+msgstr ""
+
+#: includes/Http/Router.php:284
+msgid "The authentication response has expired. Please try again."
+msgstr ""
+
+#: includes/Http/Router.php:286
+msgid "Unable to verify the authentication response. Please try again."
+msgstr ""
+
+#: includes/Http/Router.php:310
+msgid "Metadata not available: generate the Service Provider certificate first."
+msgstr ""
+
+#: includes/Plugin.php:57
+msgid "SPID/CIE blocked:"
+msgstr ""
+
+#: includes/Plugin.php:57
+msgid "this server does not allow generating or using certificates."
+msgstr ""
+
+#: includes/Plugin.php:57
+msgid "Login, ACS and metadata are disabled until the problem is solved."
+msgstr ""
+
+#: includes/Plugin.php:57
+#: includes/Settings/AdminPage.php:394
+msgid "Check again"
+msgstr ""
+
+#. translators: 1: path of the backup copy, 2: path where the data folder must be restored.
+#: includes/Plugin.php:64
+#, php-format
+msgid "<strong>SPID/CIE:</strong> after the update the data folder (keys and metadata) could not be put back in place. The backup copy is in %1$s: copy it to %2$s before doing anything else."
+msgstr ""
+
+#: includes/Saml/Bindings.php:68
+msgid "Redirecting..."
+msgstr ""
+
+#: includes/Saml/Bindings.php:71
+msgid "Redirecting to the identity provider..."
+msgstr ""
+
+#: includes/Saml/Bindings.php:78
+msgid "Click here to continue"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:51
+#: includes/Settings/AdminPage.php:52
+#: includes/Settings/AdminPage.php:272
+msgid "SPID / CIE"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:71
+#: includes/Settings/AdminPage.php:153
+#: includes/Settings/AdminPage.php:188
+msgid "Insufficient permissions."
+msgstr ""
+
+#. translators: %s: list of problems found on the server.
+#: includes/Settings/AdminPage.php:93
+#, php-format
+msgid "Generation blocked: %s"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:97
+msgid "A certificate already exists: tick the confirmation to replace it (the metadata will have to be registered again)."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:101
+#: includes/Settings/OptionsManager.php:286
+msgid "Organization name"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:101
+#: includes/Settings/AdminPage.php:300
+#: includes/Settings/OptionsManager.php:287
+msgid "Display name"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:101
+msgid "IPA code / VAT number / tax code"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:101
+#: includes/Settings/AdminPage.php:309
+#: includes/Settings/OptionsManager.php:290
+msgid "Locality"
+msgstr ""
+
+#. translators: %s: list of missing fields.
+#: includes/Settings/AdminPage.php:107
+#, php-format
+msgid "Fill in and save these first: %s."
+msgstr ""
+
+#. translators: %s: technical error message.
+#: includes/Settings/AdminPage.php:122
+#, php-format
+msgid "Certificate generation failed: %s"
+msgstr ""
+
+#. translators: %s: SPID or CIE.
+#: includes/Settings/AdminPage.php:124
+#, php-format
+msgid "%s certificate generated (valid for 730 days)."
+msgstr ""
+
+#. translators: %s: list of problems found on the server.
+#: includes/Settings/AdminPage.php:132
+#, php-format
+msgid "Import blocked: %s"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:138
+msgid "A certificate already exists: tick the confirmation to replace it."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:141
+msgid "Paste both the private key and the certificate (PEM format)."
+msgstr ""
+
+#. translators: %s: technical error message.
+#: includes/Settings/AdminPage.php:146
+#, php-format
+msgid "Import failed: %s"
+msgstr ""
+
+#. translators: %s: SPID or CIE.
+#: includes/Settings/AdminPage.php:148
+#, php-format
+msgid "%s certificate and key imported."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:159
+msgid "Certificate not found."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:171
+msgid "Check passed: the server can generate and use certificates."
+msgstr ""
+
+#. translators: %s: list of problems found on the server.
+#: includes/Settings/AdminPage.php:171
+#, php-format
+msgid "Check failed: %s"
+msgstr ""
+
+#. translators: %s: technical error message.
+#: includes/Settings/AdminPage.php:181
+#, php-format
+msgid "Not saved: %s"
+msgstr ""
+
+#. translators: %s: SPID or CIE.
+#: includes/Settings/AdminPage.php:183
+#, php-format
+msgid "%s metadata saved as \"registered\"."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:197
+msgid "No registered metadata has been saved."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:218
+msgid "Identity Provider cache cleared: it will be reloaded on next use."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:285
+msgid "1. General"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:286
+msgid "Enable login"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:286
+msgid "Enable the login/ACS routes (the metadata always remains reachable)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:287
+msgid "Production environment"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:287
+msgid "Disables all test IdPs (Demo, Validator, custom URLs). Enable only after joining AgID."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:288
+msgid "Enable login with SPID"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:289
+msgid "Enable login with the Electronic Identity Card (CIE)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:290
+msgid "CIE level"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:290
+msgid "Level 1"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:290
+msgid "Level 2 (recommended)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:290
+msgid "Level 3"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:290
+msgid "Assurance level requested for CIE. SPID uses level 2 unless the login link specifies otherwise."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:294
+msgid "2. Organization (Service Provider)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:295
+msgid "Entity type"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:295
+msgid "Public Administration"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:295
+msgid "Private entity"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:295
+msgid "Changes the metadata ContactPerson and the certificate type."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:296
+msgid "HTTPS URL that identifies the Service Provider. Once registered with AgID it must not change."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:297
+msgid "Service name"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:297
+msgid "Shown in the metadata (AttributeConsumingService)."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:298
+msgid "Service description"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:299
+msgid "Full legal name. Used in OrganizationName, Company and in the certificate."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:301
+#: includes/Settings/OptionsManager.php:288
+msgid "Organization URL"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:303
+msgid "Code type"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:303
+#: includes/Settings/OptionsManager.php:30
+#: includes/Settings/OptionsManager.php:289
+msgid "VAT number"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:303
+#: includes/Settings/AdminPage.php:334
+#: includes/Settings/OptionsManager.php:29
+#: includes/Settings/OptionsManager.php:289
+msgid "Tax code"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:304
+msgid "VAT number / Tax code"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:304
+msgid "Enter the VAT number without prefix (IT is added in the metadata)."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:306
+#: includes/Settings/OptionsManager.php:289
+msgid "IPA code"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:306
+msgid "The entity's iPA code (e.g. c_h501)."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:308
+msgid "Country (ISO 3166-1)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:309
+msgid "Used in the certificate."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:310
+#: includes/Settings/OptionsManager.php:291
+msgid "Contact email"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:311
+#: includes/Settings/OptionsManager.php:292
+msgid "Contact phone"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:315
+msgid "3. Billing data"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:315
+msgid "(private entities only: not needed for public administrations)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:316
+msgid "SPID Notice no. 29 v.3: <code>CessionarioCommittente</code> in the metadata of private entities."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:319
+msgid "Business name"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:320
+msgid "Address"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:321
+msgid "Street number"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:323
+msgid "Municipality"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:324
+msgid "Province"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:325
+msgid "Country"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:326
+msgid "Legal name (contact)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:327
+msgid "Email (contact)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:328
+msgid "Phone (contact)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:332
+msgid "4. CIE data"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:334
+msgid "Required for private entities."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:335
+#: includes/Settings/OptionsManager.php:303
+msgid "ATECO / NACE2 code"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:335
+msgid "Required for private entities (e.g. 84.11)."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:337
+#: includes/Settings/OptionsManager.php:303
+msgid "Municipality ISTAT code"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:337
+msgid "E.g. 058091 for Rome."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:338
+#: includes/Settings/OptionsManager.php:303
+msgid "Province code"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:342
+msgid "5. Requested attributes"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:342
+msgid "All selected attributes must be returned by the IdP, otherwise the login is rejected. The tax code is always required. CIE only returns tax code, first name, last name and date of birth."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:343
+msgid "SPID attributes"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:357
+msgid "Index of the attribute set in the metadata (normally 0)."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:361
+msgid "6. Testing and advanced options"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:362
+msgid "Request Destination"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:362
+msgid "IdP entityID (like spid-php)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:362
+msgid "SSO service URL"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:362
+msgid "Change only if the AgID validator requires it."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:363
+msgid "SPID Demo IdP"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:363
+msgid "demo.spid.gov.it (only when not in production)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:364
+msgid "SPID Demo (Validator mode)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:366
+msgid "Custom test IdPs"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:366
+msgid "One metadata URL (https) per line, max 5. Example: a local spid-saml-check."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:367
+msgid "Test IdP metadata (XML)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:367
+msgid "Alternative to the URL: paste here the XML metadata of a test IdP (spid-saml-check, spid-sp-test)."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:368
+msgid "Unverified TLS (testing only)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:368
+msgid "Accepts self-signed certificates from local test IdPs. Never in production."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:371
+msgid "Save settings"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:380
+msgid "Status"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:382
+msgid "Server"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:384
+msgid "OpenSSL is working"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:386
+msgid "The server does not allow using certificates: SPID/CIE is blocked."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:396
+msgid "Data"
+msgstr ""
+
+#. translators: %s: path of the plugin data folder.
+#: includes/Settings/AdminPage.php:399
+#, php-format
+msgid "Keys, certificates and registered metadata are stored in %s. <strong>Deleting the plugin loses them</strong> (and the certificate registered with AgID/CIE must be redone): download the certificate and the registered metadata first."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:406
+msgid "Disabled"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:414
+msgid "Missing data:"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:416
+msgid "Organization data complete"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:419
+msgid "Certificate missing"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:419
+msgid "generate or import it below"
+msgstr ""
+
+#. translators: %d: number of days the certificate is still valid.
+#: includes/Settings/AdminPage.php:429
+#, php-format
+msgid "Certificate valid for %d more day"
+msgid_plural "Certificate valid for %d more days"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: expiry date.
+#: includes/Settings/AdminPage.php:436
+#, php-format
+msgid "expires on %s"
+msgstr ""
+
+#. translators: %s: SPID or CIE.
+#: includes/Settings/AdminPage.php:443
+#, php-format
+msgid "%s metadata"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:448
+msgid "Routes"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:448
+msgid "Logout:"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:449
+msgid "Environment"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:449
+msgid "PRODUCTION"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:449
+msgid "Test (test IdPs are visible)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:453
+msgid "Refresh Identity Provider list"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:468
+msgid "You have not saved the registered metadata yet."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:468
+msgid "After registering the metadata with AgID/CIE, save it here: you will be warned if it changes."
+msgstr ""
+
+#. translators: %s: date the metadata was saved as registered.
+#: includes/Settings/AdminPage.php:473
+#, php-format
+msgid "Same as the metadata registered on %s"
+msgstr ""
+
+#. translators: %s: date the metadata was saved as registered.
+#: includes/Settings/AdminPage.php:481
+#, php-format
+msgid "Different from the metadata registered on %s"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:484
+msgid "If the change is intended you must <strong>repeat the registration</strong> with AgID/CIE, then save the new one."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:486
+msgid "Download current metadata"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:488
+msgid "Download the registered one"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:492
+msgid "Note (e.g. registered on ...)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:493
+msgid "Save as registered"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:493
+msgid "Save the current one as registered"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:498
+msgid "7. Service Provider certificates"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:498
+msgid "The certificate signs requests and metadata. If you have already registered an SP with AgID/CIE, <strong>import</strong> the existing key and certificate instead of generating new ones, otherwise you will have to repeat the registration. The private key is never shown."
+msgstr ""
+
+#: includes/Settings/AdminPage.php:501
+msgid "Certificate generation and import are not available:"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:508
+msgid "Subject:"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:508
+msgid "Identifier:"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:510
+msgid "Download certificate (.crt)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:515
+#: includes/Settings/AdminPage.php:525
+msgid "I confirm: replace the existing certificate"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:517
+msgid "Regenerate"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:517
+msgid "Generate certificate"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:519
+msgid "Import existing key and certificate"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:522
+msgid "Private key (PEM)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:523
+msgid "Certificate (PEM)"
+msgstr ""
+
+#: includes/Settings/AdminPage.php:527
+msgid "Import"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:20
+msgid "SPID identification code"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:21
+msgid "First name"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:22
+msgid "Last name"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:23
+msgid "Place of birth"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:24
+msgid "County of birth"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:25
+msgid "Date of birth"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:26
+msgid "Gender"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:27
+msgid "Company name"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:28
+msgid "Registered office"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:31
+msgid "ID document"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:32
+msgid "Document expiry date"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:33
+msgid "Mobile phone"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:34
+msgid "Email"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:35
+msgid "Residential address"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:36
+msgid "PEC / digital domicile"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:37
+msgid "Domicile: street"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:38
+msgid "Domicile: postal code"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:39
+msgid "Domicile: municipality"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:40
+msgid "Domicile: province"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:41
+msgid "Domicile: country"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:177
+msgid "The entityID must be a URL starting with https://"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:185
+msgid "The organization URL is not valid."
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:193
+msgid "Invalid email address."
+msgstr ""
+
+#. translators: %s: the ignored URL.
+#: includes/Settings/OptionsManager.php:251
+#, php-format
+msgid "Metadata URL ignored (https:// required): %s"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:263
+msgid "The pasted XML metadata is too large."
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:265
+msgid "The pasted XML metadata is not valid (entityID, signing certificate and SingleSignOnService are required)."
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:295
+msgid "Tax code (CIE)"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:311
+msgid "Billing: IdCodice"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:311
+msgid "Billing: company name"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:312
+msgid "Billing: address"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:312
+msgid "Billing: street number"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:313
+msgid "Billing: postal code"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:313
+msgid "Billing: municipality"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:314
+msgid "Billing: province"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:314
+msgid "Billing: legal name"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:315
+msgid "Billing: email"
+msgstr ""
+
+#: includes/Settings/OptionsManager.php:315
+msgid "Billing: phone"
+msgstr ""
+
+#: includes/Support/DataPreserver.php:92
+msgid "Operation cancelled: the keys and metadata of the SPID/CIE plugin (data/ folder) could not be safely backed up. Check the permissions of wp-content/upgrade."
+msgstr ""
+
+#. translators: %s: PHP extension name.
+#: includes/Support/Requirements.php:83
+#, php-format
+msgid "The PHP extension \"%s\" is required."
+msgstr ""
+
+#. translators: %s: list of function names.
+#: includes/Support/Requirements.php:94
+#, php-format
+msgid "OpenSSL functions not available (possibly disabled by the host with disable_functions): %s."
+msgstr ""
+
+#. translators: %s: temporary folder path.
+#: includes/Support/Requirements.php:118
+#, php-format
+msgid "The PHP temporary folder (%s) is not writable: OpenSSL needs it for its configuration."
+msgstr ""
+
+#. translators: %s: folder path.
+#: includes/Support/Requirements.php:124
+#, php-format
+msgid "The plugin data folder is not writable: %s"
+msgstr ""
+
+#. translators: %s: SPID or CIE.
+#: includes/Support/Requirements.php:143
+#, php-format
+msgid "Test certificate not readable (%s)."
+msgstr ""
+
+#. translators: 1: SPID or CIE, 2: technical error message.
+#: includes/Support/Requirements.php:146
+#, php-format
+msgid "Test generation for %1$s failed: %2$s"
+msgstr ""
+
+#: includes/Ui/Buttons.php:88
+msgid "not available"
+msgstr ""
+
+#: includes/Ui/Buttons.php:93
+msgid "Log in with SPID"
+msgstr ""
+
+#: includes/Ui/Buttons.php:94
+msgid "Choose your SPID identity provider"
+msgstr ""
+
+#: includes/Ui/Buttons.php:96
+msgid "More information about SPID"
+msgstr ""
+
+#: includes/Ui/Buttons.php:97
+msgid "Don't have SPID?"
+msgstr ""
+
+#: includes/Ui/Buttons.php:98
+msgid "Need help?"
+msgstr ""
+
+#: includes/Ui/Buttons.php:117
+msgid "Log in with CIE"
+msgstr ""
+
+#: includes/Ui/Buttons.php:122
+msgid "Login with CIE is temporarily unavailable."
+msgstr ""
+
+#: includes/Ui/Buttons.php:138
+msgid "You are logged in as"
+msgstr ""
+
+#: includes/Ui/Buttons.php:139
+msgid "Log out"
+msgstr ""
+
+#: includes/Ui/Buttons.php:162
+msgid "Use your digital identity to access online services. We do not ask you to create an account: we will only use the data needed to identify you."
+msgstr ""

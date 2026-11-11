@@ -1,10 +1,10 @@
-# Istruzioni per la prossima AI — wp-spid-cie
+# Istruzioni per la prossima AI — auth-spid-cie
 
 Contesto: plugin WordPress **autonomo** (niente Composer, niente librerie) per accesso **SPID e CIE** a servizi pubblici riservati ai cittadini (senza account WP). Leggi **prima** `ANALISI_E_ISTRUZIONI.md`: §0 (decisioni vincolanti), §4 (regole SPID/CIE), §5.7 (tema ASL) e soprattutto **§12 (stato reale e regole)**. Questo file dice solo **cosa fare ora**.
 
 ## Regole non negoziabili
 
-1. Lavora solo in `wp-content/plugins/wp-spid-cie/`. `inspirations/` è sola lettura e **non va mai copiata** nel plugin.
+1. Lavora solo in `wp-content/plugins/auth-spid-cie/`. `inspirations/` è sola lettura e **non va mai copiata** nel plugin.
 2. Zero dipendenze: niente Composer, `vendor/`, npm a runtime, né download di codice. Solo PHP ≥ 8.0 con `openssl`, `dom`, `mbstring` e API WordPress.
 3. **Non toccare la logica di sicurezza in `includes/Xml/` e `includes/Saml/ResponseValidator.php`** se non per aggiungere controlli. Mai leggere dati da nodi non coperti dalla firma verificata; mai XPath con valori da input; stringhe dinamiche in XML solo via `XmlSecurity::text_element()` o `setAttribute`.
 4. Ogni nuova regola di validazione: **prima un test negativo** in `tests/run.php`, poi il codice. I test devono restare tutti verdi.

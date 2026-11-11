@@ -9,3 +9,9 @@ ISTRUZIONI_PROSSIMA_AI.md
 .git
 .gitignore
 .distignore
+README.md
+data/*.pem
+data/*.key.php
+data
+.wordpress-org
+languages/*.pot

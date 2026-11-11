@@ -29,14 +29,14 @@ class TestIdps {
 			$sources[] = array( self::DEMO, 'SPID Demo' );
 		}
 		if ( Config::get( 'test_demo_validator', false ) ) {
-			$sources[] = array( self::DEMO_VALIDATOR, 'SPID Demo (modalità Validator)' );
+			$sources[] = array( self::DEMO_VALIDATOR, 'SPID Demo (Validator mode)' );
 		}
 		if ( Config::get( 'test_validator', false ) ) {
 			$sources[] = array( self::VALIDATOR, 'SPID Validator' );
 		}
 		foreach ( (array) Config::get( 'test_idp_urls', array() ) as $url ) {
 			$host      = wp_parse_url( $url, PHP_URL_HOST );
-			$sources[] = array( $url, 'IdP di test: ' . ( $host ? $host : $url ) );
+			$sources[] = array( $url, 'Test IdP: ' . ( $host ? $host : $url ) );
 		}
 
 		$insecure = (bool) Config::get( 'test_insecure_tls', false );
@@ -47,8 +47,8 @@ class TestIdps {
 			$idp = IdpMetadata::parse( $pasted );
 			if ( $idp ) {
 				$out[] = array_merge( $idp, array(
-					'name'         => 'IdP di test (metadata incollato)',
-					'display_name' => 'IdP di test (metadata incollato)',
+					'name'         => 'Test IdP (pasted metadata)',
+					'display_name' => 'Test IdP (pasted metadata)',
 					'logo'         => '',
 					'type'         => 'spid',
 					'test'         => true,
