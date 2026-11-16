@@ -27,14 +27,12 @@ Status: version 0.1.0 is validated locally with the AgID tools (spid-sp-test, sp
 
 = External services =
 
-This plugin contacts the following services, only to perform the login you configure:
+This plugin connects to the following services. No personal data of your visitors is sent by the site's server in the requests marked "server"; the requests marked "browser" are the SAML login itself.
 
-* SPID registry (https://registry.spid.gov.it): download of the list of identity providers and their metadata. No personal data is sent.
-* CIE identity provider (https://idserver.servizicie.interno.gov.it, pre-production: https://preproduzione.idserver.servizicie.interno.gov.it): the visitor's browser is redirected there with a signed SAML AuthnRequest. Provided by the Italian Ministry of the Interior.
-* SPID identity providers chosen by the visitor: same redirect flow, with the SAML AuthnRequest.
-* Optional test endpoints (demo.spid.gov.it, validator.spid.gov.it) are used only if the administrator configures them for testing.
-
-Privacy policy of each provider applies to the data processed by it.
+* SPID registry, https://registry.spid.gov.it (server): the site downloads the official list of SPID identity providers with their metadata (cached for 12 hours). The standard WordPress request is sent, which includes the address of your site in the user agent. Operated by AgID (Agenzia per l'Italia Digitale).
+* CIE identity provider metadata, https://idserver.servizicie.interno.gov.it, or in test mode https://preproduzione.idserver.servizicie.interno.gov.it (server): the site downloads the metadata of the CIE identity provider. Operated by the Italian Ministry of the Interior.
+* SPID and CIE identity providers (browser): when a visitor chooses an identity provider, their browser is redirected to it with a signed SAML request, and comes back with the signed response. What the provider processes is covered by its own privacy policy.
+* SPID Demo test identity provider, https://demo.spid.gov.it (server), and optionally https://validator.spid.gov.it: while the plugin is NOT in production mode, the site downloads the metadata of the SPID Demo test identity provider, which appears in the login list marked "test". Switching on "Production environment" in the settings stops this. The administrator can also add other test identity provider addresses.
 
 == Installation ==
 
