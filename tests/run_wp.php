@@ -102,15 +102,19 @@ ok( strpos( $req['xml'], 'SpidL3' ) !== false && strpos( $req['xml'], 'SpidL99' 
 $err = null;
 try { SignatureVerifier::verify_element( $doc, $doc->documentElement, array( $cert ) ); } catch ( \Exception $e ) { $err = $e->getMessage(); }
 ok( null === $err, 'embedded XML signature verifies with SP certificate' . ( $err ? " ($err)" : '' ) );
-ok( 'https://idp.example.it' === $doc->documentElement->getAttribute( 'Destination' ), 'Destination = IdP entityID by default' );
-$GLOBALS['opts']['authspidcie_options'] = array( 'destination_mode' => 'sso_url' );
+ok( 'https://idp.example.it/sso' === $doc->documentElement->getAttribute( 'Destination' ), 'Destination = SSO URL by default' );
+$GLOBALS['opts']['authspidcie_options'] = array( 'destination_mode' => 'entity_id' );
+$req3 = AuthnRequestBuilder::build( 'https://idp.example.it', 'https://idp.example.it/sso', 2, 'spid', false );
+ok( 'https://idp.example.it' === XmlSecurity::load_xml( $req3['xml'] )->documentElement->getAttribute( 'Destination' ), 'Destination = IdP entityID when configured' );
+$GLOBALS['opts']['authspidcie_options'] = array();
 $req2 = AuthnRequestBuilder::build( 'https://idp.example.it', 'https://idp.example.it/sso', 2, 'spid', false );
 $doc2 = XmlSecurity::load_xml( $req2['xml'] );
-ok( 'https://idp.example.it/sso' === $doc2->documentElement->getAttribute( 'Destination' ), 'Destination = SSO URL when configured' );
 ok( false === strpos( $req2['xml'], 'ds:Signature' ), 'no embedded signature for HTTP-Redirect' );
 $GLOBALS['opts'] = array();
 
 echo "== Redirect binding\n";
+$url_rs = Bindings::build_redirect_url( 'https://idp.example.it/sso', $req2['xml'], $req2['id'], 'spid' );
+ok( false !== strpos( $url_rs, '&RelayState=' . rawurlencode( $req2['id'] ) . '&SigAlg=' ), 'RelayState travels in the query, before SigAlg (so it is covered by the signature)' );
 $url = Bindings::build_redirect_url( 'https://idp.example.it/sso', $req2['xml'], '', 'spid' );
 $qs  = substr( $url, strpos( $url, '?' ) + 1 );
 $pos = strrpos( $qs, '&Signature=' );

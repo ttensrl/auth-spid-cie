@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Auth SPID CIE 0.1.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/auth-spid-cie\n"
-"POT-Creation-Date: 2026-11-16T10:54:45+00:00\n"
+"POT-Creation-Date: 2026-11-16T11:08:54+00:00\n"
 "PO-Revision-Date: 2026-11-11 12:00+0000\n"
 "Last-Translator: Luca Terribili\n"
 "Language-Team: Italian\n"
@@ -698,16 +698,16 @@ msgid "Request Destination"
 msgstr "Destination della richiesta"
 
 #: includes/Settings/AdminPage.php:376
+msgid "SSO service URL (recommended)"
+msgstr "URL del servizio SSO (consigliato)"
+
+#: includes/Settings/AdminPage.php:376
 msgid "IdP entityID (like spid-php)"
 msgstr "entityID dell'IdP (come spid-php)"
 
 #: includes/Settings/AdminPage.php:376
-msgid "SSO service URL"
-msgstr "URL del servizio SSO"
-
-#: includes/Settings/AdminPage.php:376
-msgid "Change only if the AgID validator requires it."
-msgstr "Cambiare solo se il validator AgID lo richiede."
+msgid "Change only if an identity provider requires it."
+msgstr "Cambiare solo se un gestore di identità lo richiede."
 
 #: includes/Settings/AdminPage.php:377
 msgid "SPID Demo IdP"
@@ -913,8 +913,14 @@ msgid "Registered with AgID/CIE? Keep a copy (optional)"
 msgstr "Registrato presso AgID/CIE? Conserva una copia (facoltativo)"
 
 #: includes/Settings/AdminPage.php:523
-msgid "When you register the metadata with AgID/CIE, save a copy here. If you later change something that alters the metadata, the plugin will tell you that the registration must be repeated."
-msgstr "Quando registri il metadata presso AgID/CIE, salva qui una copia. Se in seguito modifichi qualcosa che cambia il metadata, il plugin ti avvisa che la registrazione va rifatta."
+msgid ""
+"When you register the metadata with AgID/CIE, save a copy here. If you later "
+"change something that alters the metadata, the plugin will tell you that the "
+"registration must be repeated."
+msgstr ""
+"Quando registri il metadata presso AgID/CIE, salva qui una copia. Se in "
+"seguito modifichi qualcosa che cambia il metadata, il plugin ti avvisa che "
+"la registrazione va rifatta."
 
 #: includes/Settings/AdminPage.php:525
 msgid "No copy saved yet."
@@ -929,8 +935,12 @@ msgstr "Il metadata è identico alla copia salvata il %s."
 #. translators: %s: date the copy was saved.
 #: includes/Settings/AdminPage.php:533
 #, php-format
-msgid "The metadata is different from the copy saved on %s. If the change is intended, repeat the registration with AgID/CIE and then save a new copy."
-msgstr "Il metadata è diverso dalla copia salvata il %s. Se la modifica è voluta, ripeti la registrazione presso AgID/CIE e poi salva una nuova copia."
+msgid ""
+"The metadata is different from the copy saved on %s. If the change is "
+"intended, repeat the registration with AgID/CIE and then save a new copy."
+msgstr ""
+"Il metadata è diverso dalla copia salvata il %s. Se la modifica è voluta, "
+"ripeti la registrazione presso AgID/CIE e poi salva una nuova copia."
 
 #: includes/Settings/AdminPage.php:538
 msgid "Download saved copy"
@@ -1248,6 +1258,12 @@ msgstr ""
 "Usa la tua identità digitale per accedere ai servizi online. Non ti "
 "chiediamo di creare un account: useremo solo i dati necessari per "
 "identificarti."
+
+#~ msgid "SSO service URL"
+#~ msgstr "URL del servizio SSO"
+
+#~ msgid "Change only if the AgID validator requires it."
+#~ msgstr "Cambiare solo se il validator AgID lo richiede."
 
 #~ msgid "You have not saved the registered metadata yet."
 #~ msgstr "Non hai ancora salvato il metadata registrato."

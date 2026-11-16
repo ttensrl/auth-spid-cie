@@ -190,9 +190,9 @@ class Router {
 			) );
 
 			if ( 'redirect' === $binding ) {
-				Bindings::send_redirect( $sso_url, $request['xml'], '', $service );
+				Bindings::send_redirect( $sso_url, $request['xml'], $request['id'], $service );
 			} else {
-				Bindings::send_post( $sso_url, $request['xml'], '' );
+				Bindings::send_post( $sso_url, $request['xml'], $request['id'] );
 			}
 		} catch ( \Exception $e ) {
 			\AuthSpidCie\Support\Log::write( '[auth-spid-cie] login: ' . $e->getMessage() );

@@ -95,7 +95,7 @@ class OptionsManager {
 			// SAML.
 			'acs_index'         => 0,
 			'attributes'        => self::default_attributes(),
-			'destination_mode'  => 'entity_id',
+			'destination_mode'  => 'sso_url',
 			// Test identity providers (non-production only).
 			'test_demo'            => true,
 			'test_demo_validator'  => false,
@@ -151,7 +151,7 @@ class OptionsManager {
 			$out['sp_type'] = ( 'private' === $input['sp_type'] ) ? 'private' : 'public';
 		}
 		if ( array_key_exists( 'destination_mode', $input ) ) {
-			$out['destination_mode'] = ( 'sso_url' === $input['destination_mode'] ) ? 'sso_url' : 'entity_id';
+			$out['destination_mode'] = ( 'entity_id' === $input['destination_mode'] ) ? 'entity_id' : 'sso_url';
 		}
 
 		// Organization code: type depends on the sector.

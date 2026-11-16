@@ -373,7 +373,7 @@ class AdminPage {
 
 		// --- Avanzate / test ---
 		echo '<h2>' . esc_html__( '6. Testing and advanced options', 'auth-spid-cie' ) . '</h2><table class="form-table" role="presentation">';
-		$this->select_row( __( 'Request Destination', 'auth-spid-cie' ), 'destination_mode', $c['destination_mode'], array( 'entity_id' => __( 'IdP entityID (like spid-php)', 'auth-spid-cie' ), 'sso_url' => __( 'SSO service URL', 'auth-spid-cie' ) ), __( 'Change only if the AgID validator requires it.', 'auth-spid-cie' ) );
+		$this->select_row( __( 'Request Destination', 'auth-spid-cie' ), 'destination_mode', $c['destination_mode'], array( 'sso_url' => __( 'SSO service URL (recommended)', 'auth-spid-cie' ), 'entity_id' => __( 'IdP entityID (like spid-php)', 'auth-spid-cie' ) ), __( 'Change only if an identity provider requires it.', 'auth-spid-cie' ) );
 		$this->check_row( __( 'SPID Demo IdP', 'auth-spid-cie' ), 'test_demo', $c['test_demo'], __( 'demo.spid.gov.it (only when not in production)', 'auth-spid-cie' ) );
 		$this->check_row( __( 'SPID Demo (Validator mode)', 'auth-spid-cie' ), 'test_demo_validator', $c['test_demo_validator'], 'demo.spid.gov.it/validator' );
 		$this->check_row( 'AgID Validator', 'test_validator', $c['test_validator'], 'validator.spid.gov.it' );

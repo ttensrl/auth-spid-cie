@@ -54,7 +54,7 @@ class Config {
 
 	/** 'entity_id' (behaviour of spid-php) or 'sso_url'. To be confirmed with the AgID validator. */
 	public static function destination_mode() {
-		return 'sso_url' === self::get( 'destination_mode', 'entity_id' ) ? 'sso_url' : 'entity_id';
+		return 'entity_id' === self::get( 'destination_mode', 'sso_url' ) ? 'entity_id' : 'sso_url';
 	}
 
 	/** Default CIE level (as in wp-auth-gov-proxy): 2. */

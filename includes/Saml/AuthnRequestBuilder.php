@@ -38,7 +38,7 @@ class AuthnRequestBuilder {
 		$entity_id     = Config::entity_id( $service );
 		$id            = 'authspidcie_' . bin2hex( random_bytes( 16 ) );
 		$issue_instant = gmdate( 'Y-m-d\TH:i:s\Z' );
-		// spid-php puts the IdP entityID in Destination; configurable, to be confirmed with the validator.
+		// Destination is the IdP's SSO endpoint (what spid-sp-test expects); the IdP entityID is available as an option.
 		$destination   = 'sso_url' === Config::destination_mode() ? $sso_url : $idp_entity_id;
 
 		$doc               = new \DOMDocument( '1.0', 'UTF-8' );
