@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Auth SPID CIE
- * Plugin URI:  https://github.com/ttensrl/auth-spid-cie
+ * Plugin URI:  https://wp-pa-demo.programmato.it/spid-cie/
  * Description: Standalone SPID and CIE login (SAML 2.0 Service Provider) with no external dependencies.
  * Version:     0.1.0
  * Author:      Luca Terribili

@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Auth SPID CIE 0.1.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/auth-spid-cie\n"
-"POT-Creation-Date: 2026-11-16T11:46:06+00:00\n"
+"POT-Creation-Date: 2026-11-16T12:17:43+00:00\n"
 "PO-Revision-Date: 2026-11-11 12:00+0000\n"
 "Last-Translator: Luca Terribili\n"
 "Language-Team: Italian\n"
@@ -24,7 +24,7 @@ msgstr "Auth SPID CIE"
 
 #. Plugin URI of the plugin
 #: auth-spid-cie.php
-msgid "https://github.com/ttensrl/auth-spid-cie"
+msgid "https://wp-pa-demo.programmato.it/spid-cie/"
 msgstr ""
 
 #. Description of the plugin
@@ -471,7 +471,7 @@ msgstr "Prove"
 msgid "Advanced"
 msgstr "Avanzate"
 
-#: includes/Settings/AdminPage.php:411 includes/Settings/AdminPage.php:790
+#: includes/Settings/AdminPage.php:411 includes/Settings/AdminPage.php:792
 msgid "Certificates"
 msgstr "Certificati"
 
@@ -984,7 +984,7 @@ msgstr ""
 "La CIE restituisce solo codice fiscale, nome, cognome e data di nascita."
 
 #: includes/Settings/AdminPage.php:758 includes/Settings/AdminPage.php:770
-#: includes/Settings/AdminPage.php:785
+#: includes/Settings/AdminPage.php:787
 msgid "Save settings"
 msgstr "Salva impostazioni"
 
@@ -1135,17 +1135,15 @@ msgstr ""
 "In alternativa all'URL: incolla qui il metadata XML di un IdP di test (spid-"
 "saml-check, spid-sp-test)."
 
-#: includes/Settings/AdminPage.php:783
+#: includes/Settings/AdminPage.php:784
 msgid "Unverified TLS (testing only)"
 msgstr "TLS non verificato (solo test)"
 
-#: includes/Settings/AdminPage.php:783
-msgid ""
-"Accepts self-signed certificates from local test IdPs. Never in production."
-msgstr ""
-"Accetta certificati self-signed degli IdP di test locali. Mai in produzione."
+#: includes/Settings/AdminPage.php:784
+msgid "Accepts self-signed certificates from local test IdPs. Only available on local/development environments."
+msgstr "Accetta certificati autofirmati dei gestori di prova locali. Disponibile solo in ambienti locali o di sviluppo."
 
-#: includes/Settings/AdminPage.php:790
+#: includes/Settings/AdminPage.php:792
 msgid ""
 "The certificate signs requests and metadata. If you have already registered "
 "an SP with AgID/CIE, <strong>import</strong> the existing key and "
@@ -1157,59 +1155,59 @@ msgstr ""
 "invece di generarne di nuovi, altrimenti dovrai ripetere la registrazione. "
 "La chiave privata non viene mai mostrata."
 
-#: includes/Settings/AdminPage.php:793
+#: includes/Settings/AdminPage.php:795
 msgid "Certificate generation and import are not available:"
 msgstr "Generazione e import dei certificati non disponibili:"
 
-#: includes/Settings/AdminPage.php:799
+#: includes/Settings/AdminPage.php:801
 msgid "Present"
 msgstr "Presente"
 
-#: includes/Settings/AdminPage.php:799
+#: includes/Settings/AdminPage.php:801
 msgid "Missing"
 msgstr "Assente"
 
-#: includes/Settings/AdminPage.php:801
+#: includes/Settings/AdminPage.php:803
 msgid "Subject:"
 msgstr "Soggetto:"
 
-#: includes/Settings/AdminPage.php:801
+#: includes/Settings/AdminPage.php:803
 msgid "Identifier:"
 msgstr "Identificativo:"
 
-#: includes/Settings/AdminPage.php:803
+#: includes/Settings/AdminPage.php:805
 msgid "Download certificate (.crt)"
 msgstr "Scarica certificato (.crt)"
 
-#: includes/Settings/AdminPage.php:805
+#: includes/Settings/AdminPage.php:807
 msgid "Save the organization data first, then generate the certificate here."
 msgstr "Salva prima i dati dell'ente, poi genera qui il certificato."
 
-#: includes/Settings/AdminPage.php:810 includes/Settings/AdminPage.php:820
+#: includes/Settings/AdminPage.php:812 includes/Settings/AdminPage.php:822
 msgid "I confirm: replace the existing certificate"
 msgstr "Confermo: sostituisci il certificato esistente"
 
-#: includes/Settings/AdminPage.php:812
+#: includes/Settings/AdminPage.php:814
 msgid "Regenerate"
 msgstr "Rigenera"
 
-#: includes/Settings/AdminPage.php:812
+#: includes/Settings/AdminPage.php:814
 msgid "Generate certificate"
 msgstr "Genera certificato"
 
-#: includes/Settings/AdminPage.php:814
+#: includes/Settings/AdminPage.php:816
 msgid "Import existing key and certificate"
 msgstr "Importa chiave e certificato esistenti"
 
-#: includes/Settings/AdminPage.php:817
+#: includes/Settings/AdminPage.php:819
 msgid "Private key (PEM)"
 msgstr "Chiave privata (PEM)"
 
-#: includes/Settings/AdminPage.php:818
+#: includes/Settings/AdminPage.php:820
 msgid "Certificate (PEM)"
 msgstr "Certificato (PEM)"
 
-#: includes/Settings/AdminPage.php:822
+#: includes/Settings/AdminPage.php:824
 msgid "Import"
 msgstr "Importa"
 
@@ -1634,3 +1632,10 @@ msgstr ""
 "Usa la tua identità digitale per accedere ai servizi online. Non ti "
 "chiediamo di creare un account: useremo solo i dati necessari per "
 "identificarti."
+
+#~ msgid ""
+#~ "Accepts self-signed certificates from local test IdPs. Never in "
+#~ "production."
+#~ msgstr ""
+#~ "Accetta certificati self-signed degli IdP di test locali. Mai in "
+#~ "produzione."

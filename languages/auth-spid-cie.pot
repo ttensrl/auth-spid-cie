@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-16T11:46:06+00:00\n"
+"POT-Creation-Date: 2026-11-16T12:17:43+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: auth-spid-cie\n"
@@ -21,7 +21,7 @@ msgstr ""
 
 #. Plugin URI of the plugin
 #: auth-spid-cie.php
-msgid "https://github.com/ttensrl/auth-spid-cie"
+msgid "https://wp-pa-demo.programmato.it/spid-cie/"
 msgstr ""
 
 #. Description of the plugin
@@ -416,7 +416,7 @@ msgid "Advanced"
 msgstr ""
 
 #: includes/Settings/AdminPage.php:411
-#: includes/Settings/AdminPage.php:790
+#: includes/Settings/AdminPage.php:792
 msgid "Certificates"
 msgstr ""
 
@@ -855,7 +855,7 @@ msgstr ""
 
 #: includes/Settings/AdminPage.php:758
 #: includes/Settings/AdminPage.php:770
-#: includes/Settings/AdminPage.php:785
+#: includes/Settings/AdminPage.php:787
 msgid "Save settings"
 msgstr ""
 
@@ -975,72 +975,72 @@ msgstr ""
 msgid "Alternative to the URL: paste here the XML metadata of a test IdP (spid-saml-check, spid-sp-test)."
 msgstr ""
 
-#: includes/Settings/AdminPage.php:783
+#: includes/Settings/AdminPage.php:784
 msgid "Unverified TLS (testing only)"
 msgstr ""
 
-#: includes/Settings/AdminPage.php:783
-msgid "Accepts self-signed certificates from local test IdPs. Never in production."
+#: includes/Settings/AdminPage.php:784
+msgid "Accepts self-signed certificates from local test IdPs. Only available on local/development environments."
 msgstr ""
 
-#: includes/Settings/AdminPage.php:790
+#: includes/Settings/AdminPage.php:792
 msgid "The certificate signs requests and metadata. If you have already registered an SP with AgID/CIE, <strong>import</strong> the existing key and certificate instead of generating new ones, otherwise you will have to repeat the registration. The private key is never shown."
 msgstr ""
 
-#: includes/Settings/AdminPage.php:793
+#: includes/Settings/AdminPage.php:795
 msgid "Certificate generation and import are not available:"
 msgstr ""
 
-#: includes/Settings/AdminPage.php:799
+#: includes/Settings/AdminPage.php:801
 msgid "Present"
 msgstr ""
 
-#: includes/Settings/AdminPage.php:799
+#: includes/Settings/AdminPage.php:801
 msgid "Missing"
 msgstr ""
 
-#: includes/Settings/AdminPage.php:801
+#: includes/Settings/AdminPage.php:803
 msgid "Subject:"
 msgstr ""
 
-#: includes/Settings/AdminPage.php:801
+#: includes/Settings/AdminPage.php:803
 msgid "Identifier:"
 msgstr ""
 
-#: includes/Settings/AdminPage.php:803
+#: includes/Settings/AdminPage.php:805
 msgid "Download certificate (.crt)"
 msgstr ""
 
-#: includes/Settings/AdminPage.php:805
+#: includes/Settings/AdminPage.php:807
 msgid "Save the organization data first, then generate the certificate here."
 msgstr ""
 
-#: includes/Settings/AdminPage.php:810
-#: includes/Settings/AdminPage.php:820
+#: includes/Settings/AdminPage.php:812
+#: includes/Settings/AdminPage.php:822
 msgid "I confirm: replace the existing certificate"
 msgstr ""
 
-#: includes/Settings/AdminPage.php:812
+#: includes/Settings/AdminPage.php:814
 msgid "Regenerate"
 msgstr ""
 
-#: includes/Settings/AdminPage.php:812
+#: includes/Settings/AdminPage.php:814
 msgid "Generate certificate"
 msgstr ""
 
-#: includes/Settings/AdminPage.php:814
+#: includes/Settings/AdminPage.php:816
 msgid "Import existing key and certificate"
 msgstr ""
 
-#: includes/Settings/AdminPage.php:817
+#: includes/Settings/AdminPage.php:819
 msgid "Private key (PEM)"
 msgstr ""
 
-#: includes/Settings/AdminPage.php:818
+#: includes/Settings/AdminPage.php:820
 msgid "Certificate (PEM)"
 msgstr ""
 
-#: includes/Settings/AdminPage.php:822
+#: includes/Settings/AdminPage.php:824
 msgid "Import"
 msgstr ""
 

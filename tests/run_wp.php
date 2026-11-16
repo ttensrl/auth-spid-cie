@@ -460,6 +460,15 @@ SessionGate::logout();
 SessionGate::reset_cache();
 ok( false === SessionGate::is_authenticated() && array() === $GLOBALS['trans'] && ! isset( $_COOKIE[ SessionGate::COOKIE ] ), 'logout removes the session on the server and the cookie' );
 
+echo "== TLS non verificato solo in ambienti di sviluppo\n";
+$GLOBALS['env_type'] = 'production';
+ok( false === \AuthSpidCie\Support\Config::insecure_tls_allowed(), 'unverified TLS is never honoured in production' );
+$GLOBALS['env_type'] = 'staging';
+ok( false === \AuthSpidCie\Support\Config::insecure_tls_allowed(), 'nor on staging' );
+$GLOBALS['env_type'] = 'local';
+ok( true === \AuthSpidCie\Support\Config::insecure_tls_allowed(), 'only on local environments' );
+$GLOBALS['env_type'] = 'production';
+
 echo "== Metadata snapshot (what was registered)\n";
 use AuthSpidCie\Saml\MetadataSnapshot;
 use AuthSpidCie\Saml\MetadataBuilder;

@@ -39,7 +39,7 @@ class TestIdps {
 			$sources[] = array( $url, 'Test IdP: ' . ( $host ? $host : $url ) );
 		}
 
-		$insecure = (bool) Config::get( 'test_insecure_tls', false );
+		$insecure = (bool) Config::get( 'test_insecure_tls', false ) && Config::insecure_tls_allowed();
 		$out      = array();
 
 		$pasted = trim( (string) Config::get( 'test_idp_xml', '' ) );

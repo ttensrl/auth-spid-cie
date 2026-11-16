@@ -780,7 +780,9 @@ class AdminPage {
 		$this->text_row( 'AttributeConsumingServiceIndex', 'acs_index', $c['acs_index'], array( 'type' => 'number', 'class' => 'small-text', 'help' => __( 'Index of the attribute set in the metadata (normally 0).', 'auth-spid-cie' ) ) );
 		echo '<tr><th scope="row"><label for="authspidcie_test_idp_urls">' . esc_html__( 'Custom test IdPs', 'auth-spid-cie' ) . '</label></th><td><textarea id="authspidcie_test_idp_urls" name="' . esc_attr( $name ) . '[test_idp_urls]" rows="3" class="large-text code" placeholder="https://localhost:8443/metadata.xml">' . esc_textarea( implode( "\n", (array) $c['test_idp_urls'] ) ) . '</textarea><p class="description">' . esc_html__( 'One metadata URL (https) per line, max 5. Example: a local spid-saml-check.', 'auth-spid-cie' ) . '</p></td></tr>';
 		echo '<tr><th scope="row"><label for="authspidcie_test_idp_xml">' . esc_html__( 'Test IdP metadata (XML)', 'auth-spid-cie' ) . '</label></th><td><textarea id="authspidcie_test_idp_xml" name="' . esc_attr( $name ) . '[test_idp_xml]" rows="4" class="large-text code" placeholder="&lt;EntityDescriptor ...&gt;">' . esc_textarea( (string) $c['test_idp_xml'] ) . '</textarea><p class="description">' . esc_html__( 'Alternative to the URL: paste here the XML metadata of a test IdP (spid-saml-check, spid-sp-test).', 'auth-spid-cie' ) . '</p></td></tr>';
-		$this->check_row( __( 'Unverified TLS (testing only)', 'auth-spid-cie' ), 'test_insecure_tls', $c['test_insecure_tls'], __( 'Accepts self-signed certificates from local test IdPs. Never in production.', 'auth-spid-cie' ) );
+		if ( Config::insecure_tls_allowed() ) {
+			$this->check_row( __( 'Unverified TLS (testing only)', 'auth-spid-cie' ), 'test_insecure_tls', $c['test_insecure_tls'], __( 'Accepts self-signed certificates from local test IdPs. Only available on local/development environments.', 'auth-spid-cie' ) );
+		}
 		echo '</table></details>';
 		submit_button( __( 'Save settings', 'auth-spid-cie' ), 'primary', 'submit', true, array( 'id' => 'authspidcie-save-3' ) );
 		echo '</section></form>';

@@ -23,6 +23,9 @@ if ( ! function_exists( 'wp_is_writable' ) ) {
 if ( ! function_exists( 'wp_strip_all_tags' ) ) {
 	function wp_strip_all_tags( $s ) { return trim( strip_tags( $s ) ); }
 }
+if ( ! function_exists( 'wp_get_environment_type' ) ) {
+	function wp_get_environment_type() { return isset( $GLOBALS['env_type'] ) ? $GLOBALS['env_type'] : 'production'; }
+}
 if ( ! function_exists( 'wp_parse_url' ) ) {
 	function wp_parse_url( $url, $component = -1 ) { return parse_url( $url, $component ); }
 }

@@ -40,6 +40,14 @@ class Config {
 		return '' !== $eid ? $eid : home_url( '/' );
 	}
 
+	/**
+	 * Skipping TLS verification for test IdPs is honoured only on local/development environments
+	 * (wp_get_environment_type()), never on a production or staging site.
+	 */
+	public static function insecure_tls_allowed() {
+		return in_array( wp_get_environment_type(), array( 'local', 'development' ), true );
+	}
+
 	public static function acs_url() {
 		return home_url( '/?authspidcie=acs' );
 	}
