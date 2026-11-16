@@ -34,10 +34,10 @@ class Config {
 		return 'private' !== self::get( 'sp_type', 'public' );
 	}
 
-	/** entityID: configured value, or the metadata URL as a last resort. */
+	/** entityID: configured value, or the site address (stable, never a URL with parameters). */
 	public static function entity_id( $service = 'spid' ) {
 		$eid = trim( (string) self::get( 'entity_id', '' ) );
-		return '' !== $eid ? $eid : home_url( '/?authspidcie=metadata&service=' . $service );
+		return '' !== $eid ? $eid : home_url( '/' );
 	}
 
 	public static function acs_url() {

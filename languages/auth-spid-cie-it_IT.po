@@ -498,12 +498,8 @@ msgid "Changes the metadata ContactPerson and the certificate type."
 msgstr "Cambia ContactPerson del metadata e il tipo di certificato."
 
 #: includes/Settings/AdminPage.php:309
-msgid ""
-"HTTPS URL that identifies the Service Provider. Once registered with AgID it "
-"must not change."
-msgstr ""
-"URL https che identifica il Service Provider. Una volta registrato presso "
-"AgID non va più cambiato."
+msgid "HTTPS address that identifies the Service Provider (normally the address of this site, without parameters). If left empty, the site address is used. Once registered with AgID it must not change."
+msgstr "Indirizzo HTTPS che identifica il Service Provider (di norma l'indirizzo di questo sito, senza parametri). Se lasci vuoto si usa l'indirizzo del sito. Dopo la registrazione presso AgID non deve più cambiare."
 
 #: includes/Settings/AdminPage.php:310
 msgid "Service name"
@@ -1065,8 +1061,8 @@ msgid "Domicile: country"
 msgstr "Domicilio: nazione"
 
 #: includes/Settings/OptionsManager.php:177
-msgid "The entityID must be a URL starting with https://"
-msgstr "L'entityID deve essere un URL che inizia con https://"
+msgid "The entityID must be an https:// address without parameters (no ? or #), e.g. the address of the site."
+msgstr "L'entityID deve essere un indirizzo https:// senza parametri (niente ? o #), ad esempio l'indirizzo del sito."
 
 #: includes/Settings/OptionsManager.php:185
 msgid "The organization URL is not valid."
@@ -1228,3 +1224,19 @@ msgstr ""
 #: includes/Http/Router.php
 msgid "SPID/CIE login is not available yet: the service certificate has not been set up on this site."
 msgstr "L'accesso con SPID/CIE non è ancora disponibile: il certificato del servizio non è stato configurato su questo sito."
+
+#: includes/Settings/AdminPage.php
+msgid "You are configuring this site:"
+msgstr "Stai configurando questo sito:"
+
+#: includes/Settings/AdminPage.php
+msgid "These settings belong to this site only; the certificate and key are shared by the whole network."
+msgstr "Queste impostazioni valgono solo per questo sito; certificato e chiave sono condivisi da tutta la rete."
+
+#: includes/Settings/AdminPage.php
+msgid "Metadata of this site:"
+msgstr "Metadata di questo sito:"
+
+#: includes/Settings/AdminPage.php
+msgid "Other sites of the network:"
+msgstr "Altri siti della rete:"

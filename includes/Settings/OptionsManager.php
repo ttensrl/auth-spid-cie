@@ -171,10 +171,10 @@ class OptionsManager {
 			$eid = trim( (string) $input['entity_id'] );
 			if ( '' === $eid ) {
 				$out['entity_id'] = '';
-			} elseif ( self::is_https_url( $eid ) ) {
+			} elseif ( self::is_https_url( $eid ) && false === strpbrk( $eid, '?#' ) ) {
 				$out['entity_id'] = $eid;
 			} else {
-				self::error( 'entity_id', __( 'The entityID must be a URL starting with https://', 'auth-spid-cie' ) );
+				self::error( 'entity_id', __( 'The entityID must be an https:// address without parameters (no ? or #), e.g. the address of the site.', 'auth-spid-cie' ) );
 			}
 		}
 		if ( array_key_exists( 'org_url', $input ) ) {

@@ -288,6 +288,7 @@ class AdminPage {
 		}
 		settings_errors( OptionsManager::OPTION );
 
+		$this->render_site_box();
 		$this->render_status( $c );
 
 		echo '<form action="options.php" method="post">';
@@ -306,7 +307,7 @@ class AdminPage {
 		// --- Ente ---
 		echo '<h2>' . esc_html__( '2. Organization (Service Provider)', 'auth-spid-cie' ) . '</h2><table class="form-table" role="presentation">';
 		$this->select_row( __( 'Entity type', 'auth-spid-cie' ), 'sp_type', $c['sp_type'], array( 'public' => __( 'Public Administration', 'auth-spid-cie' ), 'private' => __( 'Private entity', 'auth-spid-cie' ) ), __( 'Changes the metadata ContactPerson and the certificate type.', 'auth-spid-cie' ) );
-		$this->text_row( 'entityID', 'entity_id', $c['entity_id'], array( 'required' => true, 'class' => 'large-text', 'placeholder' => 'https://servizi.example.it', 'help' => __( 'HTTPS URL that identifies the Service Provider. Once registered with AgID it must not change.', 'auth-spid-cie' ) ) );
+		$this->text_row( 'entityID', 'entity_id', $c['entity_id'], array( 'required' => true, 'class' => 'large-text', 'placeholder' => home_url( '/' ), 'help' => __( 'HTTPS address that identifies the Service Provider (normally the address of this site, without parameters). If left empty, the site address is used. Once registered with AgID it must not change.', 'auth-spid-cie' ) ) );
 		$this->text_row( __( 'Service name', 'auth-spid-cie' ), 'sp_name', $c['sp_name'], array( 'help' => __( 'Shown in the metadata (AttributeConsumingService).', 'auth-spid-cie' ) ) );
 		$this->text_row( __( 'Service description', 'auth-spid-cie' ), 'sp_description', $c['sp_description'], array( 'class' => 'large-text' ) );
 		$this->text_row( 'Nome organizzazione', 'org_name', $c['org_name'], array( 'required' => true, 'help' => __( 'Full legal name. Used in OrganizationName, Company and in the certificate.', 'auth-spid-cie' ) ) );
@@ -386,6 +387,29 @@ class AdminPage {
 
 		$this->render_certificates();
 
+		echo '</div>';
+	}
+
+	/** Which site is being configured, where its metadata is, and the other sites of the network. */
+	private function render_site_box() {
+		$spid = add_query_arg( array( 'authspidcie' => 'metadata', 'service' => 'spid' ), home_url( '/' ) );
+		$cie  = add_query_arg( array( 'authspidcie' => 'metadata', 'service' => 'cie' ), home_url( '/' ) );
+		echo '<div class="notice notice-info inline"><p><strong>' . esc_html__( 'You are configuring this site:', 'auth-spid-cie' ) . '</strong> <code>' . esc_html( home_url( '/' ) ) . '</code></p>';
+		echo '<p>' . esc_html__( 'These settings belong to this site only; the certificate and key are shared by the whole network.', 'auth-spid-cie' ) . '</p>';
+		echo '<p>' . esc_html__( 'Metadata of this site:', 'auth-spid-cie' ) . ' <a href="' . esc_url( $spid ) . '" target="_blank" rel="noopener">SPID</a> &middot; <a href="' . esc_url( $cie ) . '" target="_blank" rel="noopener">CIE</a>'
+			. ' &mdash; <code>' . esc_html( $spid ) . '</code></p>';
+		if ( is_multisite() && current_user_can( 'manage_network' ) ) {
+			$links = array();
+			foreach ( get_sites( array( 'number' => 50, 'fields' => 'ids' ) ) as $id ) {
+				if ( (int) $id === get_current_blog_id() ) {
+					continue;
+				}
+				$links[] = '<a href="' . esc_url( get_admin_url( $id, 'options-general.php?page=authspidcie-settings' ) ) . '">' . esc_html( get_home_url( $id, '/' ) ) . '</a>';
+			}
+			if ( $links ) {
+				echo '<p>' . esc_html__( 'Other sites of the network:', 'auth-spid-cie' ) . ' ' . implode( ' &middot; ', $links ) . '</p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each link is built with esc_url()/esc_html().
+			}
+		}
 		echo '</div>';
 	}
 
