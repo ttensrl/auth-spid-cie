@@ -314,7 +314,10 @@ class Router {
 			\AuthSpidCie\Support\Log::write( '[auth-spid-cie] metadata: ' . $e->getMessage() );
 			$this->fail( __( 'Metadata not available: generate the Service Provider certificate first.', 'auth-spid-cie' ), 503 );
 		}
-		header( 'Content-Type: application/samlmetadata+xml; charset=UTF-8' );
+		// application/xml (not application/samlmetadata+xml) so that browsers show the document instead of downloading it:
+		// the metadata can be read at a glance, and any SAML consumer accepts it.
+		header( 'Content-Type: application/xml; charset=UTF-8' );
+		header( 'Content-Disposition: inline; filename="metadata-' . $service . '.xml"' );
 		echo $xml; // phpcs:ignore WordPress.Security.EscapeOutput -- XML document.
 		exit;
 	}
