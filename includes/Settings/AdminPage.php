@@ -517,35 +517,31 @@ class AdminPage {
 		$dl = function ( $which ) use ( $service ) {
 			return wp_nonce_url( admin_url( 'admin-post.php?action=authspidcie_meta_download&service=' . $service . '&which=' . $which ), self::NONCE );
 		};
-		echo '<div style="margin-top:8px">';
-		if ( 'none' === $status['state'] ) {
-			echo '<span style="color:#996800">&#9888; ' . esc_html__( 'You have not saved the registered metadata yet.', 'auth-spid-cie' ) . '</span> ' . esc_html__( 'After registering the metadata with AgID/CIE, save it here: you will be warned if it changes.', 'auth-spid-cie' ) ;
-		} elseif ( 'same' === $status['state'] ) {
-			echo '<span style="color:#00a32a">&#10003; ' . esc_html(
-				sprintf(
-					/* translators: %s: date the metadata was saved as registered. */
-					__( 'Same as the metadata registered on %s', 'auth-spid-cie' ),
-					wp_date( get_option( 'date_format' ), strtotime( $status['saved_at'] ) )
-				)
-			) . '</span>' . ( $status['note'] ? ' (' . esc_html( $status['note'] ) . ')' : '' );
+		$state = $status['state'];
+		echo '<p style="margin:6px 0"><a class="button" href="' . esc_url( $dl( 'current' ) ) . '">' . esc_html__( 'Download current metadata', 'auth-spid-cie' ) . '</a></p>';
+		echo '<details style="margin-top:6px"' . ( 'different' === $state ? ' open' : '' ) . '><summary>' . esc_html__( 'Registered with AgID/CIE? Keep a copy (optional)', 'auth-spid-cie' ) . '</summary>';
+		echo '<p class="description">' . esc_html__( 'When you register the metadata with AgID/CIE, save a copy here. If you later change something that alters the metadata, the plugin will tell you that the registration must be repeated.', 'auth-spid-cie' ) . '</p>';
+		if ( 'none' === $state ) {
+			echo '<p>' . esc_html__( 'No copy saved yet.', 'auth-spid-cie' ) . '</p>';
 		} else {
-			echo '<span style="color:#b32d2e">&#9888; ' . esc_html(
-				sprintf(
-					/* translators: %s: date the metadata was saved as registered. */
-					__( 'Different from the metadata registered on %s', 'auth-spid-cie' ),
-					wp_date( get_option( 'date_format' ), strtotime( $status['saved_at'] ) )
-				)
-			) . '</span>. ' . wp_kses( __( 'If the change is intended you must <strong>repeat the registration</strong> with AgID/CIE, then save the new one.', 'auth-spid-cie' ), array( 'strong' => array() ) );
+			$date = wp_date( get_option( 'date_format' ), strtotime( $status['saved_at'] ) );
+			if ( 'same' === $state ) {
+				/* translators: %s: date the copy was saved. */
+				echo '<p style="color:#00a32a">&#10003; ' . esc_html( sprintf( __( 'The metadata is identical to the copy saved on %s.', 'auth-spid-cie' ), $date ) ) . '</p>';
+			} else {
+				/* translators: %s: date the copy was saved. */
+				echo '<p style="color:#b32d2e">&#9888; ' . esc_html( sprintf( __( 'The metadata is different from the copy saved on %s. If the change is intended, repeat the registration with AgID/CIE and then save a new copy.', 'auth-spid-cie' ), $date ) ) . '</p>';
+			}
+			if ( $status['note'] ) {
+				echo '<p>' . esc_html( $status['note'] ) . '</p>';
+			}
+			echo '<p><a class="button" href="' . esc_url( $dl( 'registered' ) ) . '">' . esc_html__( 'Download saved copy', 'auth-spid-cie' ) . '</a></p>';
 		}
-		echo '<br /><a class="button" href="' . esc_url( $dl( 'current' ) ) . '">' . esc_html__( 'Download current metadata', 'auth-spid-cie' ) . '</a> ';
-		if ( 'none' !== $status['state'] ) {
-			echo '<a class="button" href="' . esc_url( $dl( 'registered' ) ) . '">' . esc_html__( 'Download the registered one', 'auth-spid-cie' ) . '</a> ';
-		}
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block"><input type="hidden" name="action" value="authspidcie_meta_snapshot" /><input type="hidden" name="service" value="' . esc_attr( $service ) . '" />';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="authspidcie_meta_snapshot" /><input type="hidden" name="service" value="' . esc_attr( $service ) . '" />';
 		wp_nonce_field( self::NONCE );
 		echo '<input type="text" name="note" placeholder="' . esc_attr__( 'Note (e.g. registered on ...)', 'auth-spid-cie' ) . '" class="regular-text" /> ';
-		submit_button( 'none' === $status['state'] ? __( 'Save as registered', 'auth-spid-cie' ) : __( 'Save the current one as registered', 'auth-spid-cie' ), 'secondary', 'submit', false );
-		echo '</form></div>';
+		submit_button( __( 'Save the current metadata as the registered copy', 'auth-spid-cie' ), 'secondary', 'submit', false );
+		echo '</form></details>';
 	}
 
 	private function render_certificates() {
@@ -561,7 +557,7 @@ class AdminPage {
 			if ( $info ) {
 				echo '<p>' . esc_html__( 'Subject:', 'auth-spid-cie' ) . ' <code>' . esc_html( $info['subject'] ) . '</code> &middot; ' . esc_html__( 'Identifier:', 'auth-spid-cie' ) . ' <code>' . esc_html( $info['organization_identifier'] ) . '</code><br />SHA-256: <code>' . esc_html( $info['fingerprint'] ) . '</code></p>';
 				$dl = wp_nonce_url( admin_url( 'admin-post.php?action=authspidcie_cert_download&service=' . $service ), self::NONCE );
-				echo '<p><a class="button" href="' . esc_url( $dl ) . '>' . esc_html__( 'Download certificate (.crt)', 'auth-spid-cie' ) . '</a></p>';
+				echo '<p><a class="button" href="' . esc_url( $dl ) . '">' . esc_html__( 'Download certificate (.crt)', 'auth-spid-cie' ) . '</a></p>';
 			}
 			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="authspidcie_cert_generate" /><input type="hidden" name="service" value="' . esc_attr( $service ) . '" />';
 			wp_nonce_field( self::NONCE );
