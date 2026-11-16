@@ -35,6 +35,10 @@
 .authspidcie__idps:has(.authspidcie__idp-logo) li { border: 1px solid #d5dbe1; border-radius: 4px; }
 .authspidcie__idps:has(.authspidcie__idp-logo) a { display: flex; align-items: center; justify-content: center; min-height: 3.5rem; padding: .5rem .75rem; }
 .authspidcie__idp-logo { display: block; max-width: 100%; height: 1.75rem; width: auto; object-fit: contain; }
+/* Gestori di prova (solo fuori produzione): in evidenza e con etichetta "test". */
+.authspidcie__idps li.authspidcie__idp--test { border-color: #b36b00; background: #fff8ec; position: relative; }
+.authspidcie__idps li.authspidcie__idp--test::after { content: "test"; position: absolute; top: .2rem; right: .35rem; font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #7a4800; }
+.authspidcie__idps:not(:has(.authspidcie__idp-logo)) li.authspidcie__idp--test { border: 1px solid #b36b00; }
 .authspidcie__idp-off { color: #6c757d; font-weight: 400; }
 .authspidcie__help { margin: 0; font-size: .875rem; }
 .authspidcie__help a { color: var(--authspidcie-bg); }

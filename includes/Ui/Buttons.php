@@ -91,17 +91,22 @@ class Buttons {
 		$idps  = IdpRepository::get_all();
 		$idps  = array_values( array_filter( $idps, function ( $i ) { return 'spid' === $i['type']; } ) );
 		shuffle( $idps ); // Ordine casuale, come richiesto dalle linee guida.
+		// Test IdPs (only present outside production) go first, so they are easy to find; each group stays shuffled.
+		$test_first = array_filter( $idps, function ( $i ) { return ! empty( $i['test'] ); } );
+		$real       = array_filter( $idps, function ( $i ) { return empty( $i['test'] ); } );
+		$idps       = array_merge( array_values( $test_first ), array_values( $real ) );
 		self::enqueue();
 
 		$items = '';
 		foreach ( $idps as $idp ) {
 			$name = self::label( $idp );
 			$logo = self::idp_logo( $idp );
+			$cls  = ! empty( $idp['test'] ) ? ' class="authspidcie__idp--test"' : '';
 			$face = '' !== $logo ? '<img class="authspidcie__idp-logo" src="' . esc_url( $logo ) . '" alt="' . esc_attr( $name ) . '" loading="lazy" />' : esc_html( $name );
 			if ( self::usable( $idp ) ) {
-				$items .= '<li><a href="' . esc_url( self::login_url( $idp['entity_id'], $args['level'], $args['return'] ) ) . '" rel="nofollow">' . $face . '</a></li>';
+				$items .= '<li' . $cls . '><a href="' . esc_url( self::login_url( $idp['entity_id'], $args['level'], $args['return'] ) ) . '" rel="nofollow">' . $face . '</a></li>';
 			} else {
-				$items .= '<li><span class="authspidcie__idp-off" aria-disabled="true">' . esc_html( $name ) . ' <small>(' . esc_html__( 'not available', 'auth-spid-cie' ) . ')</small></span></li>';
+				$items .= '<li' . $cls . '><span class="authspidcie__idp-off" aria-disabled="true">' . esc_html( $name ) . ' <small>(' . esc_html__( 'not available', 'auth-spid-cie' ) . ')</small></span></li>';
 			}
 		}
 
