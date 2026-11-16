@@ -1,0 +1,83 @@
+/*
+ * Settings screen of Auth SPID CIE. Every rule starts with .authspidcie-admin so it cannot leak to
+ * the rest of wp-admin (or be affected by themes/other plugins more than the WordPress defaults).
+ */
+.authspidcie-admin { max-width: 1100px; }
+.authspidcie-admin [hidden] { display: none !important; }
+.authspidcie-admin .authspidcie-card { background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; box-shadow: 0 1px 1px rgba(0, 0, 0, .04); padding: 12px 20px 14px; margin: 0 0 16px; box-sizing: border-box; }
+.authspidcie-admin .authspidcie-card h2,
+.authspidcie-admin .authspidcie-card h3 { margin-top: 4px; }
+.authspidcie-admin .authspidcie-card h3 { font-size: 1.1em; }
+.authspidcie-admin .authspidcie-section { margin-top: 28px; scroll-margin-top: 48px; }
+.authspidcie-admin .authspidcie-section > h2 { font-size: 1.4em; margin: 0 0 8px; }
+.authspidcie-admin .authspidcie-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; align-items: start; }
+.authspidcie-admin .authspidcie-grid > .authspidcie-card { margin-bottom: 0; }
+.authspidcie-admin .form-table th { width: 220px; }
+.authspidcie-admin .form-table td { padding-top: 12px; }
+
+/* Which site is being configured */
+.authspidcie-admin .authspidcie-site { border-left: 4px solid #2271b1; padding-top: 8px; padding-bottom: 8px; }
+.authspidcie-admin .authspidcie-site p { margin: 4px 0; }
+.authspidcie-admin .authspidcie-site .dashicons { color: #2271b1; vertical-align: text-bottom; }
+
+/* Checklist */
+.authspidcie-admin .authspidcie-next { background: #f0f6fc; border-left: 4px solid #2271b1; padding: 10px 14px; margin: 8px 0 14px; font-size: 14px; }
+.authspidcie-admin .authspidcie-next--done { background: #edfaef; border-left-color: #00a32a; }
+.authspidcie-admin .authspidcie-steps { list-style: none; margin: 0; padding: 0; }
+.authspidcie-admin .authspidcie-step { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid #f0f0f1; }
+.authspidcie-admin .authspidcie-step:first-child { border-top: 0; }
+.authspidcie-admin .authspidcie-step > .dashicons { flex: 0 0 24px; width: 24px; height: 24px; font-size: 24px; }
+.authspidcie-admin .authspidcie-step p { margin: 4px 0 0; color: #50575e; max-width: 70ch; }
+.authspidcie-admin .authspidcie-step--done > .dashicons { color: #00a32a; }
+.authspidcie-admin .authspidcie-step--warn > .dashicons { color: #dba617; }
+.authspidcie-admin .authspidcie-step--todo > .dashicons { color: #8c8f94; }
+.authspidcie-admin .authspidcie-links { margin-top: 6px; }
+
+/* Section navigation */
+.authspidcie-admin .authspidcie-nav { position: sticky; top: 32px; z-index: 5; background: #f0f0f1; margin: 0 -2px; padding: 6px 2px; }
+.authspidcie-admin .authspidcie-nav ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.authspidcie-admin .authspidcie-nav a { display: inline-block; padding: 6px 14px; background: #fff; border: 1px solid #c3c4c7; border-radius: 20px; text-decoration: none; font-weight: 500; }
+.authspidcie-admin .authspidcie-nav a:hover,
+.authspidcie-admin .authspidcie-nav a:focus { border-color: #2271b1; color: #135e96; }
+@media screen and (max-width: 782px) { .authspidcie-admin .authspidcie-nav { top: 46px; } }
+
+/* Badges and inline states */
+.authspidcie-admin .authspidcie-badge { display: inline-flex; align-items: center; gap: 2px; padding: 2px 10px 2px 6px; border-radius: 12px; font-size: 12px; font-weight: 600; vertical-align: middle; margin-left: 6px; }
+.authspidcie-admin .authspidcie-badge .dashicons { width: 16px; height: 16px; font-size: 16px; }
+.authspidcie-admin .authspidcie-badge--ok { background: #edfaef; color: #006a1c; }
+.authspidcie-admin .authspidcie-badge--bad { background: #fcf0f1; color: #8a1f23; }
+.authspidcie-admin .authspidcie-badge--warn { background: #fcf9e8; color: #6e5400; }
+.authspidcie-admin .authspidcie-badge--off { background: #f0f0f1; color: #50575e; }
+.authspidcie-admin .authspidcie-service { border-top: 4px solid #c3c4c7; }
+.authspidcie-admin .authspidcie-service--ok { border-top-color: #00a32a; }
+.authspidcie-admin .authspidcie-service--bad { border-top-color: #d63638; }
+.authspidcie-admin .authspidcie-ok { color: #006a1c; }
+.authspidcie-admin .authspidcie-warn { color: #6e5400; }
+.authspidcie-admin .authspidcie-bad { color: #8a1f23; }
+.authspidcie-admin .authspidcie-ok .dashicons,
+.authspidcie-admin .authspidcie-warn .dashicons,
+.authspidcie-admin .authspidcie-bad .dashicons { vertical-align: text-bottom; }
+.authspidcie-admin .authspidcie-meta code,
+.authspidcie-admin .authspidcie-wrap { word-break: break-all; }
+.authspidcie-admin .button .dashicons { vertical-align: text-bottom; width: 18px; height: 18px; font-size: 18px; }
+
+/* Forms */
+.authspidcie-admin .authspidcie-req { color: #b32d2e; font-weight: 700; }
+.authspidcie-admin .authspidcie-suggested { background: #f6fbff; border-color: #72aee6; }
+.authspidcie-admin .authspidcie-attrs { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 16px; }
+.authspidcie-admin .authspidcie-inline { display: inline-block; margin: 0; }
+.authspidcie-admin .authspidcie-list { list-style: disc; margin: 6px 0 6px 20px; }
+.authspidcie-admin details > summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+.authspidcie-admin details.authspidcie-card > summary { padding: 2px 0; }
+.authspidcie-admin details[open] > summary { margin-bottom: 6px; }
+.authspidcie-admin .authspidcie-more { margin-top: 8px; }
+.authspidcie-admin .authspidcie-tech table { margin-top: 8px; }
+.authspidcie-admin .authspidcie-tech th { width: 160px; }
+.authspidcie-admin .submit { margin: 8px 0 0; padding: 0; }
+.authspidcie-admin textarea.code { font-size: 12px; }
+
+@media screen and (max-width: 782px) {
+	.authspidcie-admin .form-table th { width: auto; }
+	.authspidcie-admin .authspidcie-grid { grid-template-columns: 1fr; }
+	.authspidcie-admin .authspidcie-card { padding: 10px 14px 12px; }
+}

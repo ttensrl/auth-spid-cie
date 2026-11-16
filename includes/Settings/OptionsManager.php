@@ -291,8 +291,9 @@ class OptionsManager {
 			'contact_email' => __( 'Contact email', 'auth-spid-cie' ),
 			'contact_phone' => __( 'Contact phone', 'auth-spid-cie' ),
 		);
-		if ( 'cie' === $service || 'private' === $o['sp_type'] ) {
-			$need['cie_fiscal_code'] = 'cie' === $service ? __( 'Tax code (CIE)', 'auth-spid-cie' ) : null;
+		// CIE: the tax code is only asked to private entities (public ones are identified by the IPA code).
+		if ( 'cie' === $service && 'private' === $o['sp_type'] ) {
+			$need['cie_fiscal_code'] = __( 'Tax code (CIE)', 'auth-spid-cie' );
 		}
 		foreach ( $need as $key => $label ) {
 			if ( null !== $label && '' === trim( (string) $o[ $key ] ) ) {
@@ -300,7 +301,11 @@ class OptionsManager {
 			}
 		}
 		if ( 'cie' === $service ) {
-			foreach ( array( 'cie_nace2' => __( 'ATECO / NACE2 code', 'auth-spid-cie' ), 'cie_municipality' => __( 'Municipality ISTAT code', 'auth-spid-cie' ), 'cie_province' => __( 'Province code', 'auth-spid-cie' ) ) as $key => $label ) {
+			$cie_fields = array( 'cie_municipality' => __( 'Municipality ISTAT code', 'auth-spid-cie' ), 'cie_province' => __( 'Province code', 'auth-spid-cie' ) );
+			if ( 'private' === $o['sp_type'] ) {
+				$cie_fields = array( 'cie_nace2' => __( 'ATECO / NACE2 code', 'auth-spid-cie' ) ) + $cie_fields;
+			}
+			foreach ( $cie_fields as $key => $label ) {
 				if ( '' === trim( (string) $o[ $key ] ) ) {
 					$missing[] = $label;
 				}

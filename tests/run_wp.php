@@ -187,6 +187,47 @@ $miss = OptionsManager::missing_for_metadata( array(), 'spid' );
 ok( in_array( 'entityID', $miss, true ) && in_array( 'IPA code', $miss, true ), 'missing_for_metadata lists what to fill' );
 ok( array() === OptionsManager::missing_for_metadata( $base + array( 'sp_type' => 'public' ), 'spid' ), 'complete public data -> nothing missing' );
 
+echo "== Settings screen: readiness and checklist\n";
+use AuthSpidCie\Settings\Readiness;
+$ready_in = array( 'enabled' => true, 'probe_ok' => true, 'missing' => array(), 'has_cert' => true, 'key_ok' => true );
+ok( Readiness::OFF === Readiness::service( 'cie', array( 'enabled' => false ) )['state'], 'a turned-off service is "not active"' );
+ok( Readiness::BLOCKED === Readiness::service( 'spid', array( 'probe_ok' => false ) + $ready_in )['state'], 'a server that cannot use OpenSSL blocks the service' );
+$md = Readiness::service( 'spid', array( 'missing' => array( 'entityID', 'IPA code' ) ) + $ready_in );
+ok( Readiness::MISSING_DATA === $md['state'] && false !== strpos( $md['text'], 'entityID, IPA code' ), 'missing data is listed in plain words' );
+ok( Readiness::NO_CERT === Readiness::service( 'spid', array( 'has_cert' => false ) + $ready_in )['state'], 'no certificate -> "certificate missing"' );
+ok( Readiness::KEY_UNREADABLE === Readiness::service( 'spid', array( 'key_ok' => false ) + $ready_in )['state'], 'unreadable key is reported' );
+ok( Readiness::READY === Readiness::service( 'spid', $ready_in )['state'] && 'ok' === Readiness::service( 'spid', $ready_in )['tone'], 'everything in place -> ready (green)' );
+
+$svc = function ( array $o ) use ( $ready_in ) { return Readiness::service( 'spid', $o + $ready_in ); };
+$off = Readiness::service( 'cie', array( 'enabled' => false ) );
+$cl  = Readiness::checklist( array(), array( 'spid' => $svc( array( 'missing' => array( 'x' ) ) ), 'cie' => $off ), array() );
+ok( 5 === count( $cl['steps'] ) && 'org' === $cl['next']['id'] && 1 === $cl['next']['number'], 'checklist: with missing data the next step is the organization data' );
+$cl = Readiness::checklist( array(), array( 'spid' => $svc( array( 'has_cert' => false ) ), 'cie' => $off ), array() );
+ok( 'done' === $cl['steps'][0]['status'] && 'cert' === $cl['next']['id'], 'checklist: data complete -> next is the certificate' );
+$cl = Readiness::checklist( array(), array( 'spid' => $svc( array() ), 'cie' => $off ), array( 'spid' => 'none' ) );
+ok( 'register' === $cl['next']['id'] && 'todo' === $cl['steps'][2]['status'], 'checklist: certificate in place -> next is registering the metadata' );
+$cl = Readiness::checklist( array(), array( 'spid' => $svc( array() ), 'cie' => $off ), array( 'spid' => 'changed' ) );
+ok( 'warn' === $cl['steps'][2]['status'], 'checklist: metadata changed since the saved copy -> warning' );
+$cl = Readiness::checklist( array(), array( 'spid' => $svc( array() ), 'cie' => $off ), array( 'spid' => 'same' ) );
+ok( 'done' === $cl['steps'][2]['status'] && 'login' === $cl['next']['id'], 'checklist: copy saved and unchanged -> next is enabling the login' );
+$cl = Readiness::checklist( array( 'enabled' => true ), array( 'spid' => $svc( array() ), 'cie' => $off ), array( 'spid' => 'same' ) );
+ok( 'prod' === $cl['next']['id'], 'checklist: login enabled -> only production is left' );
+$cl = Readiness::checklist( array( 'enabled' => true, 'production' => true ), array( 'spid' => $svc( array() ), 'cie' => $off ), array( 'spid' => 'same' ) );
+ok( null === $cl['next'], 'checklist: everything done -> no next step' );
+$cl = Readiness::checklist( array(), array( 'spid' => $off, 'cie' => $off ), array() );
+ok( 'org' === $cl['next']['id'] && 'todo' === $cl['steps'][0]['status'], 'checklist: nothing active -> asks to turn a service on' );
+$cl = Readiness::checklist( array(), array( 'spid' => $svc( array( 'has_cert' => false ) ), 'cie' => Readiness::service( 'cie', array( 'missing' => array( 'Province code' ) ) + $ready_in ) ), array() );
+ok( 'org' === $cl['next']['id'], 'checklist: one active service still missing data keeps the first step open' );
+
+$pub = array_merge( OptionsManager::defaults(), $base, array( 'sp_type' => 'public', 'cie_municipality' => '058091', 'cie_province' => 'RM', 'cie_nace2' => '', 'cie_fiscal_code' => '' ) );
+ok( array() === OptionsManager::missing_for_metadata( $pub, 'cie' ), 'public entity: CIE needs neither NACE2 nor a CIE tax code (fields that are not even shown)' );
+$priv_miss = OptionsManager::missing_for_metadata( array_merge( $pub, array( 'sp_type' => 'private', 'org_code_type' => 'VATNumber' ) ), 'cie' );
+ok( in_array( 'ATECO / NACE2 code', $priv_miss, true ) && in_array( 'Tax code (CIE)', $priv_miss, true ), 'private entity: CIE asks for NACE2 and the tax code' );
+$GLOBALS['opts']['authspidcie_options'] = array( 'entity_id' => 'https://keep.example.it/' );
+$san2 = OptionsManager::sanitize( array( '_form' => 1, 'entity_id' => 'https://x.example.it/?a=1' ) );
+ok( 'https://keep.example.it/' === $san2['entity_id'], 'an entityID with parameters is rejected and the previous value is kept' );
+$GLOBALS['opts'] = array();
+
 echo "== Test IdPs\n";
 $GLOBALS['opts']['authspidcie_options'] = array( 'production' => true, 'test_demo' => true, 'test_idp_urls' => array( 'https://localhost:8443/metadata.xml' ) );
 ok( array() === \AuthSpidCie\Idp\TestIdps::get_all(), 'no test IdP is ever offered in production' );

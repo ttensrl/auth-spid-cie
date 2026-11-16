@@ -65,8 +65,8 @@ PHP 8.0 or later, with the openssl, dom, libxml and mbstring extensions.
 == Screenshots ==
 
 1. Login page on a public-administration site, with the SPID and CIE buttons.
-2. Admin panel: status, requirements check and registered-metadata snapshot.
-3. Admin panel: organization data for the SAML metadata.
+2. Admin panel: guided checklist with the next step, and the status of SPID and CIE.
+3. Admin panel: organization data, with required fields marked and values suggested from the site.
 
 == Privacy and security ==
 
