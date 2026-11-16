@@ -3,6 +3,7 @@
 namespace AuthSpidCie\Http;
 
 use AuthSpidCie\Auth\SessionGate;
+use AuthSpidCie\Cert\CertificateManager;
 use AuthSpidCie\Idp\IdpRepository;
 use AuthSpidCie\Saml\AuthnRequestBuilder;
 use AuthSpidCie\Saml\Bindings;
@@ -163,6 +164,10 @@ class Router {
 		$default = ( 'cie' === $service ) ? Config::cie_level() : 2;
 		$level   = isset( $_GET['level'] ) ? (int) $_GET['level'] : $default;
 		$level   = max( 1, min( 3, $level ) );
+
+		if ( ! CertificateManager::exists( $service ) || false === CertificateManager::get_private_key( $service ) ) {
+			$this->fail( __( 'SPID/CIE login is not available yet: the service certificate has not been set up on this site.', 'auth-spid-cie' ), 503 );
+		}
 
 		$fallback  = home_url( '/' );
 		$return_to = isset( $_GET['returnTo'] ) ? wp_validate_redirect( esc_url_raw( wp_unslash( $_GET['returnTo'] ) ), $fallback ) : $fallback;

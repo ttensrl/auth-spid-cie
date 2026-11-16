@@ -1088,3 +1088,7 @@ msgstr ""
 #: includes/Ui/Buttons.php:178
 msgid "Use your digital identity to access online services. We do not ask you to create an account: we will only use the data needed to identify you."
 msgstr ""
+
+#: includes/Http/Router.php
+msgid "SPID/CIE login is not available yet: the service certificate has not been set up on this site."
+msgstr ""

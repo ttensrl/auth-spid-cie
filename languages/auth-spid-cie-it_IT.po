@@ -1224,3 +1224,7 @@ msgstr ""
 "Usa la tua identità digitale per accedere ai servizi online. Non ti "
 "chiediamo di creare un account: useremo solo i dati necessari per "
 "identificarti."
+
+#: includes/Http/Router.php
+msgid "SPID/CIE login is not available yet: the service certificate has not been set up on this site."
+msgstr "L'accesso con SPID/CIE non è ancora disponibile: il certificato del servizio non è stato configurato su questo sito."
